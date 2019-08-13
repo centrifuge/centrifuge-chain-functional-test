@@ -4,12 +4,10 @@ import { expect } from 'chai';
 import { Anchoring } from './anchoring';
 import { ApiPromise } from '@polkadot/api';
 import { connect } from './connect';
+import { AccountManager } from './account_manager';
 
 // TODO read from env
 const WS_PROVIDER='ws://127.0.0.1:9944';
-
-// TODO generate accounts and use
-const SUBSTRATE_ACCOUNT='//Alice';
 
 describe('Anchoring', async () => {
 
@@ -17,6 +15,8 @@ describe('Anchoring', async () => {
 
   before(async () => {
     api = await connect(WS_PROVIDER);
+    let accMan = new AccountManager();
+    await accMan.createTestAccounts(api, 3, 1000000);
   });
 
   describe('Commit', async () => {
