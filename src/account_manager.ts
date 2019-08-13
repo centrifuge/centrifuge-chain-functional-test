@@ -1,10 +1,20 @@
 import { ApiPromise } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
+import { KeyringPair } from '@polkadot/keyring/types';
 
 const DEFAULT_ACCOUNTS_MNEMONIC_PREFIX = 'Test';
 const PERMANANT_ACCOUNTS = ['//Bob', '//Charlie', '//Eve'];
 
 export class AccountManager {
+
+    private keyring: Keyring;
+
+    private accountMnemonicPrefix: string;
+
+    constructor() {
+        this.keyring = new Keyring({ type: 'sr25519' });
+        this.accountMnemonicPrefix = DEFAULT_ACCOUNTS_MNEMONIC_PREFIX;
+    }
 
     /**
      * This will create a fixed number of permanant test accounts plus some new accounts(nAdditionalAccounts) when called. 
@@ -20,10 +30,11 @@ export class AccountManager {
             nAdditionalAccounts: number, 
             minBalance: number,
             accountMnemonicPrefix: string = DEFAULT_ACCOUNTS_MNEMONIC_PREFIX) {
-        const keyring = new Keyring({ type: 'sr25519' });
+
+        this.accountMnemonicPrefix = accountMnemonicPrefix;
 
         // Add alice to our keyring with a hard-deived path (empty phrase, so uses dev)
-        const alice = keyring.addFromUri('//Alice');
+        const alice = this.keyring.addFromUri('//Alice');
         const alicesBalance = await api.query.balances.freeBalance(alice.address);
         let alicesBalanceRaw = +alicesBalance.toString();
 
@@ -41,14 +52,15 @@ export class AccountManager {
         for (let i = 0; i < nAdditionalAccounts; i++) {
             // generate accounts of suri format {accountMnemonicPrefix}_i/centrifuge//{accountMnemonicPrefix}_i . Secret key is and hard key is
             // `{accountMnemonicPrefix}_i`. Eg: Test_1/centrifuge//Test_1
-            additionalAccMnemonics.push(accountMnemonicPrefix + '_' + i + '/centrifuge//' + accountMnemonicPrefix + '_' + i);
+            additionalAccMnemonics.push(this.accountMnemonicPrefix + '_' + i + '/centrifuge//' + this.accountMnemonicPrefix + '_' + i);
         }
 
         let allAccountMnemonics = PERMANANT_ACCOUNTS.concat(additionalAccMnemonics);
 
         // make sure the all accounts have enough balance
+        console.log('*********** logging account addresses ***********');
         for (let accM in allAccountMnemonics) {
-            const acc = keyring.addFromUri(allAccountMnemonics[accM]);
+            const acc = this.keyring.addFromUri(allAccountMnemonics[accM]);
             const accBalance = await api.query.balances.freeBalance(acc.address);
             console.log(acc.address);
             const accBalanceRaw = +accBalance.toString();
@@ -59,12 +71,22 @@ export class AccountManager {
                 } catch (e) {
                     console.log(e);
                 }
-                
             }
 
             // update nonce
             aliceNonceRaw++;
         }
+        console.log('*********** end logging account addresses ***********');
+    }
+
+    getAccount(suri: string): KeyringPair {
+        let pair = this.keyring.createFromUri(suri);
+        return this.keyring.getPair(pair.address);
+    }
+
+    getAccountByIndex(i: number): KeyringPair {
+        let pair = this.keyring.createFromUri(this.accountMnemonicPrefix + '_' + i + '/centrifuge//' + this.accountMnemonicPrefix + '_' + i);
+        return this.keyring.getPair(pair.address);
     }
 
 }

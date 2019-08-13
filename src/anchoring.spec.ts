@@ -15,6 +15,14 @@ describe('Anchoring', async () => {
 
   before(async () => {
     api = await connect(WS_PROVIDER);
+    const [chain, nodeName, nodeVersion] = await Promise.all([
+      api.rpc.system.chain(),
+      api.rpc.system.name(),
+      api.rpc.system.version()
+    ]);
+    console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
+
+    // TODO move this to a place at the route of all tests later
     let accMan = new AccountManager();
     await accMan.createTestAccounts(api, 3, 1000000);
   });
@@ -22,12 +30,6 @@ describe('Anchoring', async () => {
   describe('Commit', async () => {
 
     it('should commit anchor', async () => {
-       const [chain, nodeName, nodeVersion] = await Promise.all([
-          api.rpc.system.chain(),
-          api.rpc.system.name(),
-          api.rpc.system.version()
-      ]);
-      console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
       const result = new Anchoring();
       //result.commit();
       expect(result).to.equal('Hello world!');
