@@ -1,12 +1,13 @@
 import { ApiPromise } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair } from '@polkadot/keyring/types';
+import { Config } from './config';
 
 const DEFAULT_ACCOUNTS_MNEMONIC_PREFIX = 'Test';
 
 // TODO pull these from the env
-const PERMANANT_ACCOUNTS = ['//Bob', '//Charlie', '//Eve'];
-const FUNDING_ACCOUNT = '//Alice';
+// const PERMANANT_ACCOUNTS = ['//Bob', '//Charlie', '//Eve'];
+// const FUNDING_ACCOUNT = '//Alice';
 
 export class AccountManager {
 
@@ -14,9 +15,12 @@ export class AccountManager {
 
     private accountMnemonicPrefix: string;
 
-    constructor() {
+    private config: Config;
+
+    constructor(config: Config) {
         this.keyring = new Keyring({ type: 'sr25519' });
         this.accountMnemonicPrefix = DEFAULT_ACCOUNTS_MNEMONIC_PREFIX;
+        this.config = config;
     }
 
     /**
@@ -37,12 +41,12 @@ export class AccountManager {
         this.accountMnemonicPrefix = accountMnemonicPrefix;
 
         // Add funding account to our keyring
-        const funder = this.keyring.addFromUri(FUNDING_ACCOUNT);
+        const funder = this.keyring.addFromUri(this.config.getFundingAccountSURI());
         const fundersBalance = await api.query.balances.freeBalance(funder.address);
         let fundersBalanceRaw = +fundersBalance.toString();
 
         // funders balance must be higher than the maximum required balance to be transfered to other accounts
-        if (fundersBalanceRaw < minBalance * (PERMANANT_ACCOUNTS.length + nAdditionalAccounts) ) {
+        if (fundersBalanceRaw < minBalance * (this.config.getPermanantAccountSURIs().length + nAdditionalAccounts) ) {
             throw new Error('Funder is too poor to pay for the test accounts');
         }
 
@@ -58,7 +62,7 @@ export class AccountManager {
             additionalAccMnemonics.push(this.accountMnemonicPrefix + '_' + i + '/centrifuge//' + this.accountMnemonicPrefix + '_' + i);
         }
 
-        let allAccountMnemonics = PERMANANT_ACCOUNTS.concat(additionalAccMnemonics);
+        let allAccountMnemonics = this.config.getPermanantAccountSURIs().concat(additionalAccMnemonics);
 
         // make sure the all accounts have enough balance
         console.log('*********** logging account addresses ***********');
