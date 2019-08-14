@@ -3,7 +3,10 @@ import { Keyring } from '@polkadot/keyring';
 import { KeyringPair } from '@polkadot/keyring/types';
 
 const DEFAULT_ACCOUNTS_MNEMONIC_PREFIX = 'Test';
+
+// TODO pull these from the env
 const PERMANANT_ACCOUNTS = ['//Bob', '//Charlie', '//Eve'];
+const FUNDING_ACCOUNT = '//Alice';
 
 export class AccountManager {
 
@@ -18,7 +21,7 @@ export class AccountManager {
 
     /**
      * This will create a fixed number of permanant test accounts plus some new accounts(nAdditionalAccounts) when called. 
-     * Permanant accounts are maintained with a provided balance if they already exist. All accounts are funded using '//Alice' test account 
+     * Permanant accounts are maintained with a provided balance if they already exist. All accounts are funded using 'FUNDING_ACCOUNT' test account 
      * which is expected to have some balance at the start of the tests. 
      * @param api api client.
      * @param nAdditionalAccounts number additional accounts to create indexed by some sequence number.
@@ -33,19 +36,19 @@ export class AccountManager {
 
         this.accountMnemonicPrefix = accountMnemonicPrefix;
 
-        // Add alice to our keyring with a hard-deived path (empty phrase, so uses dev)
-        const alice = this.keyring.addFromUri('//Alice');
-        const alicesBalance = await api.query.balances.freeBalance(alice.address);
-        let alicesBalanceRaw = +alicesBalance.toString();
+        // Add funding account to our keyring
+        const funder = this.keyring.addFromUri(FUNDING_ACCOUNT);
+        const fundersBalance = await api.query.balances.freeBalance(funder.address);
+        let fundersBalanceRaw = +fundersBalance.toString();
 
-        // alices balance must be higher than the maximum required balance to be transfered to other accounts
-        if (alicesBalanceRaw < minBalance * (PERMANANT_ACCOUNTS.length + nAdditionalAccounts) ) {
-            throw new Error('Alice is too poor to pay for the test accounts');
+        // funders balance must be higher than the maximum required balance to be transfered to other accounts
+        if (fundersBalanceRaw < minBalance * (PERMANANT_ACCOUNTS.length + nAdditionalAccounts) ) {
+            throw new Error('Funder is too poor to pay for the test accounts');
         }
 
-        // execute transfers sequencially so that nonce can be properly updated for Alice
-        let aliceNonce = await api.query.system.accountNonce(alice.address);
-        let aliceNonceRaw = +aliceNonce.toString();
+        // execute transfers sequencially so that nonce can be properly updated for funder
+        let funderNonce = await api.query.system.accountNonce(funder.address);
+        let funderNonceRaw = +funderNonce.toString();
 
         // generate the prefixes for additional test accounts
         let additionalAccMnemonics: string[] = [];
@@ -67,14 +70,14 @@ export class AccountManager {
 
             if (accBalanceRaw < minBalance) {
                 try {
-                    await api.tx.balances.transfer(acc.address, minBalance - accBalanceRaw).signAndSend(alice, {nonce: aliceNonceRaw});
+                    await api.tx.balances.transfer(acc.address, minBalance - accBalanceRaw).signAndSend(funder, {nonce: funderNonceRaw});
                 } catch (e) {
                     console.log(e);
                 }
             }
 
             // update nonce
-            aliceNonceRaw++;
+            funderNonceRaw++;
         }
         console.log('*********** end logging account addresses ***********');
     }
