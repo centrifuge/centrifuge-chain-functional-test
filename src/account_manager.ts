@@ -5,10 +5,6 @@ import { Config } from './config';
 
 const DEFAULT_ACCOUNTS_MNEMONIC_PREFIX = 'Test';
 
-// TODO pull these from the env
-// const PERMANANT_ACCOUNTS = ['//Bob', '//Charlie', '//Eve'];
-// const FUNDING_ACCOUNT = '//Alice';
-
 export class AccountManager {
 
     private keyring: Keyring;

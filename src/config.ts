@@ -24,8 +24,4 @@ export class Config {
     getCentChainEndpoint(): string {
         return this.get("cent_chain_endpoint");
     }
-
-    // funding_account": "//Alice",
-    // "permanant_accounts": ["//Bob", "//Charlie", "//Eve"],
-    // "cent_chain_endpoint": "ws://127.0.0.1:9944"
 }
