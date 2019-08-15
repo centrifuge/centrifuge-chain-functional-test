@@ -5,7 +5,8 @@ import { Anchoring, AnchorParam } from './anchoring';
 import { ApiPromise } from '@polkadot/api';
 import { connect } from './connect';
 import { AccountManager } from './account_manager';
-import { newRandomAnchorParam } from './util';
+import { newRandomCommitParam, newRandomAnchorParams } from './testutil';
+import { u8aToHex } from '@polkadot/util';
 
 // TODO read from env
 const WS_PROVIDER='ws://127.0.0.1:9944';
@@ -30,25 +31,47 @@ describe('Anchoring', async () => {
     await accMan.createTestAccounts(api, 3, 1000000);
   });
 
-  describe('Commit', () => {
+  it('should commit anchor', (cb) => {
+    const anchorer = new Anchoring(api);
+    let ancParam = newRandomCommitParam();
+    anchorer.commit(ancParam)
+      .signAndSend(accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+        //console.log('Transaction status:', status.type);
+        if (status.isFinalized) {
+          let anchor = await anchorer.findAnchor(ancParam.getAnchorId());
+          expect(anchor.docRoot).to.equal(ancParam.docRoot);
+          expect(anchor.id).to.equal(ancParam.getAnchorId());
 
-    it('should commit anchor', (cb) => {
-      const anchorer = new Anchoring(api);
-      let ancParam = newRandomAnchorParam();
-      anchorer.commit(ancParam)
-        .signAndSend(accMan.getAccountByIndex(0), ({ events = [], status }) => {
-          if (status.isFinalized) {
-            events.forEach(async ({ phase, event: { data, method, section } }) => {
-              //console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
-              let anchor = await anchorer.findAnchor(ancParam.getAnchorId());
-              expect(anchor.docRoot).to.equal(ancParam.docRoot)
-              expect(anchor.id).to.equal(ancParam.getAnchorId())
-              cb();
-            });
-          }
-        });
-    });
+          // committing same anchor twice must FAIL
+          anchorer.commit(ancParam).signAndSend(accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+            //console.log('Transaction status:', status.type);
+            if (status.isFinalized) {
+              // find the anchored event
+              events.forEach(async ({ phase, event: { data, method, section } }) => {
+                if (section === 'system') {
+                  expect(method).to.equal('ExtrinsicFailed');
+                  cb();
+                }
+              });
+            }
+          });
+        }
+      });
+  });
 
+  it('should pre-commit anchor', (cb) => {
+    const anchorer = new Anchoring(api);
+    let ancParam = newRandomAnchorParams();
+    anchorer.preCommit(ancParam.preAnchorParam)
+      .signAndSend(accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+        //console.log('Transaction status:', status.type);
+        if (status.isFinalized) {
+          let anchor = await anchorer.findPreAnchor(ancParam.preAnchorParam.anchorId);
+          expect(anchor.signingRoot).to.equal(ancParam.preAnchorParam.signingRoot);
+          expect(anchor.identity).to.equal(u8aToHex(accMan.getAccountByIndex(0).publicKey));
+          cb();
+        }
+      });
   });
 
   after(async () => {

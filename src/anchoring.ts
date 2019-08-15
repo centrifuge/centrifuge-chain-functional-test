@@ -3,7 +3,17 @@ import { SubmittableExtrinsic } from '@polkadot/api/promise/types';
 import { bnToHex, hexToU8a } from '@polkadot/util';
 import { blake2AsHex } from '@polkadot/util-crypto';
 
-export class PreAnchorData {}
+export class PreAnchorParam {
+    anchorId: string;
+    signingRoot: string;
+
+    constructor(
+        anchorId: string,
+        signingRoot: string) {
+        this.anchorId = anchorId;
+        this.signingRoot = signingRoot;
+    }
+}
 
 export class AnchorParam {
     idPreImage: string;
@@ -19,6 +29,21 @@ export class AnchorParam {
     getAnchorId(): string {
         let pmBn = hexToU8a(this.idPreImage);
         return blake2AsHex(pmBn);
+    }
+}
+
+export class PreAnchorData {
+    signingRoot: string;
+    identity: string;
+    expirationBlock: string;
+
+    constructor(
+        signingRoot: string,
+        identity: string,
+        expirationBlock: string) {
+            this.signingRoot = signingRoot;
+            this.identity = identity;
+            this.expirationBlock = expirationBlock;
     }
 }
 
@@ -44,8 +69,8 @@ export class Anchoring {
         this.api = api;
     }
 
-    preCommit(data: PreAnchorData)/*: SubmittableExtrinsic<CodecResult, SubscriptionResult>*/ {
-        return this.api.tx.anchor.preCommit();
+    preCommit(data: PreAnchorParam): SubmittableExtrinsic {
+        return this.api.tx.anchor.preCommit(data.anchorId, data.signingRoot);
     }
 
     commit(data: AnchorParam): SubmittableExtrinsic {
@@ -55,5 +80,13 @@ export class Anchoring {
     async findAnchor(anchorId: string): Promise<AnchorData> {
         let anchor = await this.api.query.anchor.anchors(anchorId);
         return new AnchorData(bnToHex((<any>anchor)['id']), bnToHex((<any>anchor)['doc_root']), bnToHex((<any>anchor)['anchored_block']));
+    }
+
+    async findPreAnchor(anchorId: string): Promise<PreAnchorData> {
+        let preAnchor = await this.api.query.anchor.preAnchors(anchorId);
+        return new PreAnchorData(
+                bnToHex((<any>preAnchor)['signing_root']), 
+                bnToHex((<any>preAnchor)['identity']), 
+                bnToHex((<any>preAnchor)['expiration_block']));
     }
 }
