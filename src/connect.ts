@@ -9,7 +9,7 @@ export async function connect(wsURL: string): Promise<ApiPromise> {
           AnchorData: {
             "id": "H256",
             "doc_root": "H256",
-            "anchored_block": "u32"
+            "anchored_block": "u64"
           },
           PreAnchorData: {
             "signing_root": "H256",
