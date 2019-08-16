@@ -9,7 +9,7 @@
   "main": "echo \"Error: no main specified\" && exit 1",
   "scripts": {
     "start": "echo \"Error: no start specified\" && exit 1",
-    "test": "mocha -r ts-node/register src/**/*.spec.ts"
+    "test": "mocha -r ts-node/register src/root_test.ts src/**/*.spec.ts"
   },
   "author": "",
   "license": "ISC",
