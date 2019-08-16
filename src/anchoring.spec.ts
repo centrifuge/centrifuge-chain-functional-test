@@ -6,11 +6,7 @@ import { TestGlobals } from './test_globals';
 import { newRandomCommitParam, newRandomAnchorParams } from './testutil';
 import { u8aToHex } from '@polkadot/util';
 
-describe('Anchoring', async () => {
-
-  before(() => {
-    console.log(TestGlobals.testConfig);
-  });
+describe('Anchoring', () => {
 
   it('should commit anchor and not allow the same to be committed again', (cb) => {
     const anchorer = new Anchoring(TestGlobals.api);
@@ -70,7 +66,6 @@ describe('Anchoring', async () => {
     anchorer.preCommit(ancParam.preAnchorParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {
-          // pre-committing same anchor before expiration of previous pre-commit must FAIL
           anchorer.commit(ancParam.anchorParam)
             .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
               if (status.isFinalized) {
@@ -90,7 +85,6 @@ describe('Anchoring', async () => {
     anchorer.preCommit(ancParam.preAnchorParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {
-          // pre-committing same anchor before expiration of previous pre-commit must FAIL
           anchorer.commit(ancParam.anchorParam)
             .signAndSend(TestGlobals.accMan.getAccountByIndex(1), async ({ events = [], status }) => {
               if (status.isFinalized) {
@@ -105,9 +99,4 @@ describe('Anchoring', async () => {
         }
       });
   });
-
-  after(async () => {
-    TestGlobals.api.disconnect();
-  });
-
 });

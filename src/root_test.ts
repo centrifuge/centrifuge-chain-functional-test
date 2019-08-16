@@ -22,6 +22,7 @@ before(async () => {
     await TestGlobals.accMan.createTestAccounts(TestGlobals.api, 3, 1000000);
 });
 
-after(() => {
+after((cb) => {
     TestGlobals.api.disconnect();
+    cb();
 });
