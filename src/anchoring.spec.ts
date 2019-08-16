@@ -6,8 +6,11 @@ import { TestGlobals } from './test_globals';
 import { newRandomCommitParam, newRandomAnchorParams } from './testutil';
 import { u8aToHex } from '@polkadot/util';
 
-
 describe('Anchoring', async () => {
+
+  before(() => {
+    console.log(TestGlobals.testConfig);
+  });
 
   it('should commit anchor and not allow the same to be committed again', (cb) => {
     const anchorer = new Anchoring(TestGlobals.api);
@@ -38,19 +41,19 @@ describe('Anchoring', async () => {
   });
 
   it('should pre-commit anchor and not allow to pre-commit the same before expiration', (cb) => {
-    const anchorer = new Anchoring(api);
+    const anchorer = new Anchoring(TestGlobals.api);
     let ancParam = newRandomAnchorParams();
     anchorer.preCommit(ancParam.preAnchorParam)
-      .signAndSend(accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+      .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         //console.log('Transaction status:', status.type);
         if (status.isFinalized) {
           let anchor = await anchorer.findPreAnchor(ancParam.preAnchorParam.anchorId);
           expect(anchor.signingRoot).to.equal(ancParam.preAnchorParam.signingRoot);
-          expect(anchor.identity).to.equal(u8aToHex(accMan.getAccountByIndex(0).publicKey));
+          expect(anchor.identity).to.equal(u8aToHex(TestGlobals.accMan.getAccountByIndex(0).publicKey));
 
           // pre-committing same anchor before expiration of previous pre-commit must FAIL
           anchorer.preCommit(ancParam.preAnchorParam)
-            .signAndSend(accMan.getAccountByIndex(1), async ({ events = [], status }) => {
+            .signAndSend(TestGlobals.accMan.getAccountByIndex(1), async ({ events = [], status }) => {
               //console.log('Transaction status:', status.type);
               if (status.isFinalized) {
                 events.forEach(async ({ phase, event: { data, method, section } }) => {
@@ -66,15 +69,15 @@ describe('Anchoring', async () => {
   });
 
   it('should pre-commit and the commit anchor with document proof', (cb) => {
-    const anchorer = new Anchoring(api);
+    const anchorer = new Anchoring(TestGlobals.api);
     let ancParam = newRandomAnchorParams();
     anchorer.preCommit(ancParam.preAnchorParam)
-      .signAndSend(accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+      .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         //console.log('Transaction status:', status.type);
         if (status.isFinalized) {
           // pre-committing same anchor before expiration of previous pre-commit must FAIL
           anchorer.commit(ancParam.anchorParam)
-            .signAndSend(accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+            .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
               //console.log('Transaction status:', status.type);
               if (status.isFinalized) {
                 let anchor = await anchorer.findAnchor(ancParam.anchorParam.getAnchorId());
@@ -88,15 +91,15 @@ describe('Anchoring', async () => {
   });
 
   it('should pre-commit and the commit anchor from another account must fail', (cb) => {
-    const anchorer = new Anchoring(api);
+    const anchorer = new Anchoring(TestGlobals.api);
     let ancParam = newRandomAnchorParams();
     anchorer.preCommit(ancParam.preAnchorParam)
-      .signAndSend(accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+      .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         //console.log('Transaction status:', status.type);
         if (status.isFinalized) {
           // pre-committing same anchor before expiration of previous pre-commit must FAIL
           anchorer.commit(ancParam.anchorParam)
-            .signAndSend(accMan.getAccountByIndex(1), async ({ events = [], status }) => {
+            .signAndSend(TestGlobals.accMan.getAccountByIndex(1), async ({ events = [], status }) => {
               //console.log('Transaction status:', status.type);
               if (status.isFinalized) {
                 events.forEach(async ({ phase, event: { data, method, section } }) => {
