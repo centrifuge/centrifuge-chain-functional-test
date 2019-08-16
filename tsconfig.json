@@ -62,6 +62,8 @@
 
 
     // FIXME This is a HACK that is needed for the current mock-socket defs TODO FIX this when upstream is fixed
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+
+    "resolveJsonModule": true
+  },
 }

@@ -2,40 +2,18 @@ import 'mocha';
 import { expect } from 'chai';
 
 import { Anchoring } from './anchoring';
-import { ApiPromise } from '@polkadot/api';
-import { connect } from './connect';
-import { AccountManager } from './account_manager';
+import { TestGlobals } from './test_globals';
 import { newRandomCommitParam, newRandomAnchorParams } from './testutil';
 import { u8aToHex } from '@polkadot/util';
 
-// TODO read from env
-const WS_PROVIDER='ws://127.0.0.1:9944';
 
 describe('Anchoring', async () => {
 
-  let api: ApiPromise;
-
-  let accMan: AccountManager;
-
-  before(async () => {
-    api = await connect(WS_PROVIDER);
-    const [chain, nodeName, nodeVersion] = await Promise.all([
-      api.rpc.system.chain(),
-      api.rpc.system.name(),
-      api.rpc.system.version()
-    ]);
-    console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
-
-    // TODO move this to a place at the route of all tests later
-    accMan = new AccountManager();
-    await accMan.createTestAccounts(api, 3, 1000000);
-  });
-
   it('should commit anchor and not allow the same to be committed again', (cb) => {
-    const anchorer = new Anchoring(api);
+    const anchorer = new Anchoring(TestGlobals.api);
     let ancParam = newRandomCommitParam();
     anchorer.commit(ancParam)
-      .signAndSend(accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+      .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         //console.log('Transaction status:', status.type);
         if (status.isFinalized) {
           let anchor = await anchorer.findAnchor(ancParam.getAnchorId());
@@ -43,7 +21,7 @@ describe('Anchoring', async () => {
           expect(anchor.id).to.equal(ancParam.getAnchorId());
 
           // committing same anchor twice must FAIL
-          anchorer.commit(ancParam).signAndSend(accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+          anchorer.commit(ancParam).signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
             //console.log('Transaction status:', status.type);
             if (status.isFinalized) {
               // find the anchored event
@@ -134,7 +112,7 @@ describe('Anchoring', async () => {
   });
 
   after(async () => {
-    api.disconnect();
+    TestGlobals.api.disconnect();
   });
 
 });
