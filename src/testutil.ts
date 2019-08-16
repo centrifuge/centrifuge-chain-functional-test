@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import BN from 'bn.js';
 import { blake2AsHex } from '@polkadot/util-crypto';
 
-import { bnToHex, bufferToU8a, u8aConcat, u8aToHex } from '@polkadot/util';
+import { bnToHex, bufferToU8a, u8aConcat, u8aToHex, u8aToString } from '@polkadot/util';
 
 export function newRandomCommitParam(): AnchorCommitParam {
     return new AnchorCommitParam(bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))));
@@ -26,7 +26,8 @@ export function newRandomAnchorParams(): RandomAnchor {
     let anchorId = anchorParam.getAnchorId();
     let signingRoot = bufferToU8a(crypto.randomBytes(32));
     let proof = bufferToU8a(crypto.randomBytes(32));
-    if (signingRoot < proof) {
+    
+    if (u8aToHex(signingRoot) < u8aToHex(proof)) {
         anchorParam.docRoot = blake2AsHex(u8aConcat(signingRoot, proof));
     } else {
         anchorParam.docRoot = blake2AsHex(u8aConcat(proof, signingRoot));
