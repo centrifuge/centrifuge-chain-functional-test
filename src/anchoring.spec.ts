@@ -109,6 +109,30 @@ describe('Anchoring', async () => {
       });
   });
 
+  it('should pre-commit and the commit anchor from another account must fail', (cb) => {
+    const anchorer = new Anchoring(api);
+    let ancParam = newRandomAnchorParams();
+    anchorer.preCommit(ancParam.preAnchorParam)
+      .signAndSend(accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+        //console.log('Transaction status:', status.type);
+        if (status.isFinalized) {
+          // pre-committing same anchor before expiration of previous pre-commit must FAIL
+          anchorer.commit(ancParam.anchorParam)
+            .signAndSend(accMan.getAccountByIndex(1), async ({ events = [], status }) => {
+              //console.log('Transaction status:', status.type);
+              if (status.isFinalized) {
+                events.forEach(async ({ phase, event: { data, method, section } }) => {
+                  if (section === 'system') {
+                    expect(method).to.equal('ExtrinsicFailed');
+                    cb();
+                  }
+                });
+              }
+            });
+        }
+      });
+  });
+
   after(async () => {
     api.disconnect();
   });
