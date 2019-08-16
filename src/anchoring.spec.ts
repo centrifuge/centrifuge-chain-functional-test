@@ -17,7 +17,6 @@ describe('Anchoring', async () => {
     let ancParam = newRandomCommitParam();
     anchorer.commit(ancParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
-        //console.log('Transaction status:', status.type);
         if (status.isFinalized) {
           let anchor = await anchorer.findAnchor(ancParam.getAnchorId());
           expect(anchor.docRoot).to.equal(ancParam.docRoot);
@@ -25,7 +24,6 @@ describe('Anchoring', async () => {
 
           // committing same anchor twice must FAIL
           anchorer.commit(ancParam).signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
-            //console.log('Transaction status:', status.type);
             if (status.isFinalized) {
               // find the anchored event
               events.forEach(async ({ phase, event: { data, method, section } }) => {
@@ -45,7 +43,6 @@ describe('Anchoring', async () => {
     let ancParam = newRandomAnchorParams();
     anchorer.preCommit(ancParam.preAnchorParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
-        //console.log('Transaction status:', status.type);
         if (status.isFinalized) {
           let anchor = await anchorer.findPreAnchor(ancParam.preAnchorParam.anchorId);
           expect(anchor.signingRoot).to.equal(ancParam.preAnchorParam.signingRoot);
@@ -54,7 +51,6 @@ describe('Anchoring', async () => {
           // pre-committing same anchor before expiration of previous pre-commit must FAIL
           anchorer.preCommit(ancParam.preAnchorParam)
             .signAndSend(TestGlobals.accMan.getAccountByIndex(1), async ({ events = [], status }) => {
-              //console.log('Transaction status:', status.type);
               if (status.isFinalized) {
                 events.forEach(async ({ phase, event: { data, method, section } }) => {
                   if (section === 'system') {
@@ -73,12 +69,10 @@ describe('Anchoring', async () => {
     let ancParam = newRandomAnchorParams();
     anchorer.preCommit(ancParam.preAnchorParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
-        //console.log('Transaction status:', status.type);
         if (status.isFinalized) {
           // pre-committing same anchor before expiration of previous pre-commit must FAIL
           anchorer.commit(ancParam.anchorParam)
             .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
-              //console.log('Transaction status:', status.type);
               if (status.isFinalized) {
                 let anchor = await anchorer.findAnchor(ancParam.anchorParam.getAnchorId());
                 expect(anchor.docRoot).to.equal(ancParam.anchorParam.docRoot);
@@ -95,12 +89,10 @@ describe('Anchoring', async () => {
     let ancParam = newRandomAnchorParams();
     anchorer.preCommit(ancParam.preAnchorParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
-        //console.log('Transaction status:', status.type);
         if (status.isFinalized) {
           // pre-committing same anchor before expiration of previous pre-commit must FAIL
           anchorer.commit(ancParam.anchorParam)
             .signAndSend(TestGlobals.accMan.getAccountByIndex(1), async ({ events = [], status }) => {
-              //console.log('Transaction status:', status.type);
               if (status.isFinalized) {
                 events.forEach(async ({ phase, event: { data, method, section } }) => {
                   if (section === 'system') {
