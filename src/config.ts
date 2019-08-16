@@ -1,12 +1,8 @@
-import fs from "fs";
-
 export class Config {
     private configJson: Object;
 
-    constructor(path: string) {
-        let content = fs.readFileSync(path);
-        let str = new TextDecoder().decode(content); 
-        this.configJson = JSON.parse(str);
+    constructor(configJson: Object) {
+        this.configJson = configJson;
     }
 
     get(key: string):any {
