@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import BN from 'bn.js';
 import { blake2AsHex } from '@polkadot/util-crypto';
 
-import { bnToHex } from '@polkadot/util';
+import { bnToHex, bufferToU8a, u8aConcat, u8aToHex } from '@polkadot/util';
 
 export function newRandomCommitParam(): AnchorCommitParam {
     return new AnchorCommitParam(bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))));
@@ -24,13 +24,13 @@ export class RandomAnchor {
 export function newRandomAnchorParams(): RandomAnchor {
     let anchorParam = newRandomCommitParam();
     let anchorId = anchorParam.getAnchorId();
-    let signingRoot = new BN(crypto.randomBytes(32));
-    let proof = new BN(crypto.randomBytes(32));
-    if (signingRoot.gt(proof)) {
-        anchorParam.docRoot = blake2AsHex(Buffer.concat([signingRoot.toBuffer(), proof.toBuffer()]));
+    let signingRoot = bufferToU8a(crypto.randomBytes(32));
+    let proof = bufferToU8a(crypto.randomBytes(32));
+    if (signingRoot < proof) {
+        anchorParam.docRoot = blake2AsHex(u8aConcat(signingRoot, proof));
     } else {
-        anchorParam.docRoot = blake2AsHex(Buffer.concat([proof.toBuffer(), signingRoot.toBuffer()]));
+        anchorParam.docRoot = blake2AsHex(u8aConcat(proof, signingRoot));
     }
-    anchorParam.proof = bnToHex(proof);
-    return new RandomAnchor(new AnchorPreCommitParam(anchorId, bnToHex(signingRoot)), anchorParam);
+    anchorParam.proof = u8aToHex(proof);
+    return new RandomAnchor(new AnchorPreCommitParam(anchorId, u8aToHex(signingRoot)), anchorParam);
 }
