@@ -9,6 +9,4 @@ RUN npm config set unsafe-perm true
 
 RUN npm install
 
-EXPOSE 3001
-
 CMD ["npm", "test"]
