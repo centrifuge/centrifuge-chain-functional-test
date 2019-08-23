@@ -1,0 +1,11 @@
+# Default values for centNodeChart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# TODO replace later
+centrifugeChainEndpoint: 'ws://localhost:9944'
+
+fundingAccount: 'centrifugeAccount'
+
+namespace: default
+

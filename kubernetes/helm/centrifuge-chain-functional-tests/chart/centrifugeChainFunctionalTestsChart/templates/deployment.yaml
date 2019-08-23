@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: centrifuge-chain-functional-tests-{{ randAlphaNum 6 | lower }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      containers:
+        - env:
+            - name: CENTRIFUGE-CHAIN-ENDPOINT
+              value: {{ $.Values.centrifugeChainEndpoint }}
+            - name: FUNDING_ACCOUNT
+              value: {{ $.Values.fundingAccount }}
+          image: 'centrifugeio/centrifuge-chain-functional-tests:latest'
+          imagePullPolicy: Always
+          name: centrifuge-chain-functional-tests
+      imagePullSecrets:
+        - name: myregistrykey
+      restartPolicy: Never
