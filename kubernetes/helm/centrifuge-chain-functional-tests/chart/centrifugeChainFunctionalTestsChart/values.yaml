@@ -2,9 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-centrifugeChainEndpoint: 'ws://localhost:9944'
+centrifugeChainEndpoint: 'ws://centrifugechainvalidator-0:9944'
 
 fundingAccount: 'centrifugeAccount'
 
-namespace: default
+namespace: fulvous
 

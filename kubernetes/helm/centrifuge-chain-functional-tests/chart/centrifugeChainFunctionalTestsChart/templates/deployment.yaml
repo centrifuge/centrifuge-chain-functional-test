@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: centrifuge-chain-functional-tests-{{ randAlphaNum 6 | lower }}
+  name: centrifugeChainFunctionalTests-{{ randAlphaNum 6 | lower }}
   namespace: {{ $.Values.namespace }}
 spec:
   backoffLimit: 1
@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - env:
-            - name: CENTRIFUGE-CHAIN-ENDPOINT
+            - name: CENTRIFUGE_CHAIN_ENDPOINT
               value: {{ $.Values.centrifugeChainEndpoint }}
             - name: FUNDING_ACCOUNT
               value: {{ $.Values.fundingAccount }}
