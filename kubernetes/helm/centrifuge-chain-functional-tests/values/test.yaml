@@ -6,5 +6,5 @@ centrifugeChainEndpoint: 'ws://centrifugechainvalidator-0:9944'
 
 fundingAccount: 'centrifugeAccount'
 
-namespace: default
+namespace: fulvous
 
