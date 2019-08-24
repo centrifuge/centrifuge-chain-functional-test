@@ -70,20 +70,20 @@ export class Anchoring {
     }
 
     preCommit(data: PreAnchorParam): SubmittableExtrinsic {
-        return this.api.tx.anchor.preCommit(data.anchorId, data.signingRoot);
+        return this.api.tx.anchorModule.preCommit(data.anchorId, data.signingRoot);
     }
 
     commit(data: AnchorParam): SubmittableExtrinsic {
-        return this.api.tx.anchor.commit(data.idPreImage, data.docRoot, data.proof);
+        return this.api.tx.anchorModule.commit(data.idPreImage, data.docRoot, data.proof);
     }
 
     async findAnchor(anchorId: string): Promise<AnchorData> {
-        let anchor = await this.api.query.anchor.anchors(anchorId);
+        let anchor = await this.api.query.anchorModule.anchors(anchorId);
         return new AnchorData(bnToHex((<any>anchor)['id']), bnToHex((<any>anchor)['doc_root']), bnToHex((<any>anchor)['anchored_block']));
     }
 
     async findPreAnchor(anchorId: string): Promise<PreAnchorData> {
-        let preAnchor = await this.api.query.anchor.preAnchors(anchorId);
+        let preAnchor = await this.api.query.anchorModule.preAnchors(anchorId);
         return new PreAnchorData(
                 bnToHex((<any>preAnchor)['signing_root']), 
                 bnToHex((<any>preAnchor)['identity']), 
