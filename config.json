@@ -1,5 +1,5 @@
 {
-    "funding_account": "0xe22b94b0b31792a48c173066cc48cf2c0df646bc990add739430cd5cf99a4c36",
+    "funding_account": "//Alice",
     "permanant_accounts": ["//Bob", "//Charlie", "//Eve"],
     "cent_chain_endpoint": "ws://127.0.0.1:9944"
 }
