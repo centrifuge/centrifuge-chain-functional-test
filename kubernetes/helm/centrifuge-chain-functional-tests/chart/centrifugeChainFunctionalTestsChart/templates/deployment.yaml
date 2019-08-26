@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: centrifugeChainFunctionalTests-{{ randAlphaNum 6 | lower }}
+  name: centrifuge-chain-functional-tests-{{ randAlphaNum 6 | lower }}
   namespace: {{ $.Values.namespace }}
 spec:
   backoffLimit: 1
