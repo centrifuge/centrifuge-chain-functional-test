@@ -5,6 +5,9 @@ import { Anchoring } from './anchoring';
 import { TestGlobals } from './test_globals';
 import { newRandomCommitParam, newRandomAnchorParams } from './testutil';
 import { u8aToHex } from '@polkadot/util';
+import { IKeyringPair } from '@polkadot/types/types';
+import { ApiPromise } from '@polkadot/api';
+import { Keyring } from '@polkadot/keyring';
 
 describe('Anchoring', () => {
 
@@ -99,4 +102,59 @@ describe('Anchoring', () => {
         }
       });
   });
+
+  xit('should transfer balance correctly', async () => {
+    let keyring = new Keyring({ type: 'sr25519' });
+    const alice = keyring.addFromUri('//Alice');
+    const charlie = keyring.addFromUri('//Charlie');
+    const testAcc = keyring.addFromUri('//TestAcc');
+    console.log(testAcc.address);
+
+    let funderNonce = await TestGlobals.api.query.system.accountNonce(alice.address);
+    let funderNonceRaw = +funderNonce.toString();
+
+    try {
+      const accBalance = await TestGlobals.api.query.balances.freeBalance(charlie.address);
+      for (let i = 0; i < 5; i++) {
+        const testAcc = keyring.addFromUri('//TestAcc' + i);
+        const accBalance = await TestGlobals.api.query.balances.freeBalance(testAcc.address);
+        console.log(testAcc.address);
+        let start = new Date();
+        let res = await senderFunction(TestGlobals.api, testAcc.address, alice, 100000, funderNonceRaw);
+        //console.log(res);
+        funderNonceRaw++;
+        let firstTxTime = new Date();
+        console.log(i + "th tx time: ", firstTxTime.getTime() - start.getTime());
+      }
+    } catch(e) {
+      console.log(e);
+      throw e;
+    }
+    
+  })
 });
+
+
+function senderFunction(api: ApiPromise, receiver: string, sender: IKeyringPair, value: number, nonce: number): Promise<any> {
+  return new Promise<any>((resolve: Function, reject: Function) => {
+    api.tx.balances.transfer(receiver, value).sign(sender, { nonce: nonce })
+      .send(({ events = [], status }) => {
+        console.log('Transaction status:', status.type);
+  
+        if (status.isFinalized) {
+          console.log('Completed at block hash', status.asFinalized.toHex());
+          console.log('Events:');
+  
+          events.forEach(({ phase, event: { data, method, section } }) => {
+            console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
+          });
+
+          resolve(events);
+
+          //cb();
+  
+          //process.exit(0);
+        }
+      });
+  })
+}

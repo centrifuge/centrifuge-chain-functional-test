@@ -2,6 +2,7 @@ import { ApiPromise } from '@polkadot/api';
 import { Keyring } from '@polkadot/keyring';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Config } from './config';
+import { IKeyringPair } from '@polkadot/types/types';
 
 const DEFAULT_ACCOUNTS_MNEMONIC_PREFIX = 'Test';
 
@@ -53,9 +54,8 @@ export class AccountManager {
         // generate the prefixes for additional test accounts
         let additionalAccMnemonics: string[] = [];
         for (let i = 0; i < nAdditionalAccounts; i++) {
-            // generate accounts of suri format {accountMnemonicPrefix}_i/centrifuge//{accountMnemonicPrefix}_i . Secret key is and hard key is
-            // `{accountMnemonicPrefix}_i`. Eg: Test_1/centrifuge//Test_1
-            additionalAccMnemonics.push(this.accountMnemonicPrefix + '_' + i + '/centrifuge//' + this.accountMnemonicPrefix + '_' + i);
+            // generate accounts of suri format //{accountMnemonicPrefix}_i . Eg: //Test_1
+            additionalAccMnemonics.push('//' + this.accountMnemonicPrefix + '_' + i);
         }
 
         let allAccountMnemonics = this.config.getPermanantAccountSURIs().concat(additionalAccMnemonics);
@@ -64,13 +64,17 @@ export class AccountManager {
         console.log('*********** logging account addresses ***********');
         for (let accM in allAccountMnemonics) {
             const acc = this.keyring.addFromUri(allAccountMnemonics[accM]);
-            const accBalance = await api.query.balances.freeBalance(acc.address);
+            // TODO test this when we upgrade substrate for the chain next time. For now it always 
+            // transfers the min balance to the accounts. Since otherwise it causes an error where `Transaction status: Future`.
+            // const accBalance = await api.query.balances.freeBalance(acc.address);
+            const accBalanceRaw = 0;
             console.log(acc.address);
-            const accBalanceRaw = +accBalance.toString();
+            
 
             if (accBalanceRaw < minBalance) {
                 try {
-                    await api.tx.balances.transfer(acc.address, minBalance - accBalanceRaw).signAndSend(funder, {nonce: funderNonceRaw});
+                    let res = await this.senderFunction(api, acc.address, funder, minBalance - accBalanceRaw, funderNonceRaw);
+                    //console.log(res);
                 } catch (e) {
                     console.log(e);
                 }
@@ -88,8 +92,31 @@ export class AccountManager {
     }
 
     getAccountByIndex(i: number): KeyringPair {
-        let pair = this.keyring.createFromUri(this.accountMnemonicPrefix + '_' + i + '/centrifuge//' + this.accountMnemonicPrefix + '_' + i);
+        let pair = this.keyring.createFromUri('//' + this.accountMnemonicPrefix + '_' + i);
         return this.keyring.getPair(pair.address);
     }
 
+    senderFunction(api: ApiPromise, receiver: string, sender: IKeyringPair, value: number, nonce: number): Promise<any> {
+        return new Promise<any>((resolve: Function, reject: Function) => {
+          api.tx.balances.transfer(receiver, value).sign(sender, { nonce: nonce })
+            .send(({ events = [], status }) => {
+              console.log('Transaction status:', status.type);
+        
+              if (status.isFinalized) {
+                console.log('Completed at block hash', status.asFinalized.toHex());
+                console.log('Events:');
+        
+                events.forEach(({ phase, event: { data, method, section } }) => {
+                  console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
+                });
+      
+                resolve(events);
+      
+                //cb();
+        
+                //process.exit(0);
+              }
+            });
+        })
+      }
 }
