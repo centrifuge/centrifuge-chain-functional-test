@@ -18,6 +18,6 @@ export class Config {
     }
 
     getCentChainEndpoint(): string {
-        return this.get("cent_chain_endpoint");
+        return this.get("centrifuge_chain_endpoint");
     }
 }
