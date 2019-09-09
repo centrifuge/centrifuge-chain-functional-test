@@ -12,7 +12,7 @@ import { Keyring } from '@polkadot/keyring';
 describe('Anchoring', () => {
 
   it('should commit anchor and not allow the same to be committed again', (cb) => {
-    const anchorer = new Anchoring(TestGlobals.api);
+    const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomCommitParam();
     anchorer.commit(ancParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
@@ -38,7 +38,7 @@ describe('Anchoring', () => {
   });
 
   it('should pre-commit anchor and not allow to pre-commit the same before expiration', (cb) => {
-    const anchorer = new Anchoring(TestGlobals.api);
+    const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomAnchorParams();
     anchorer.preCommit(ancParam.preAnchorParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
@@ -64,7 +64,7 @@ describe('Anchoring', () => {
   });
 
   it('should pre-commit and the commit anchor with document proof', (cb) => {
-    const anchorer = new Anchoring(TestGlobals.api);
+    const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomAnchorParams();
     anchorer.preCommit(ancParam.preAnchorParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
@@ -83,7 +83,7 @@ describe('Anchoring', () => {
   });
 
   it('should pre-commit and the commit anchor from another account must fail', (cb) => {
-    const anchorer = new Anchoring(TestGlobals.api);
+    const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomAnchorParams();
     anchorer.preCommit(ancParam.preAnchorParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
@@ -110,17 +110,17 @@ describe('Anchoring', () => {
     const testAcc = keyring.addFromUri('//TestAcc');
     console.log(testAcc.address);
 
-    let funderNonce = await TestGlobals.api.query.system.accountNonce(alice.address);
+    let funderNonce = await TestGlobals.connection.api.query.system.accountNonce(alice.address);
     let funderNonceRaw = +funderNonce.toString();
 
     try {
-      const accBalance = await TestGlobals.api.query.balances.freeBalance(charlie.address);
+      const accBalance = await TestGlobals.connection.api.query.balances.freeBalance(charlie.address);
       for (let i = 0; i < 5; i++) {
         const testAcc = keyring.addFromUri('//TestAcc' + i);
-        const accBalance = await TestGlobals.api.query.balances.freeBalance(testAcc.address);
+        const accBalance = await TestGlobals.connection.api.query.balances.freeBalance(testAcc.address);
         console.log(testAcc.address);
         let start = new Date();
-        let res = await senderFunction(TestGlobals.api, testAcc.address, alice, 100000, funderNonceRaw);
+        let res = await senderFunction(TestGlobals.connection.api, testAcc.address, alice, 100000, funderNonceRaw);
         //console.log(res);
         funderNonceRaw++;
         let firstTxTime = new Date();

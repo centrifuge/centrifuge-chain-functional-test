@@ -1,7 +1,7 @@
-import { ApiPromise } from '@polkadot/api';
 import { SubmittableExtrinsic } from '@polkadot/api/promise/types';
 import { bnToHex, hexToU8a } from '@polkadot/util';
 import { blake2AsHex } from '@polkadot/util-crypto';
+import { Connection } from './connect';
 
 export class PreAnchorParam {
     anchorId: string;
@@ -63,27 +63,27 @@ export class AnchorData {
 
 export class Anchoring {
 
-    private api: ApiPromise;
+    private connection:  Connection;
 
-    constructor(api: ApiPromise) {
-        this.api = api;
+    constructor(con: Connection) {
+        this.connection = con;
     }
 
     preCommit(data: PreAnchorParam): SubmittableExtrinsic {
-        return this.api.tx.anchorModule.preCommit(data.anchorId, data.signingRoot);
+        return this.connection.api.tx.anchorModule.preCommit(data.anchorId, data.signingRoot);
     }
 
     commit(data: AnchorParam): SubmittableExtrinsic {
-        return this.api.tx.anchorModule.commit(data.idPreImage, data.docRoot, data.proof);
+        return this.connection.api.tx.anchorModule.commit(data.idPreImage, data.docRoot, data.proof);
     }
 
     async findAnchor(anchorId: string): Promise<AnchorData> {
-        let anchor = await this.api.query.anchorModule.anchors(anchorId);
-        return new AnchorData(bnToHex((<any>anchor)['id']), bnToHex((<any>anchor)['doc_root']), bnToHex((<any>anchor)['anchored_block']));
+        let anchor = await this.connection.provider.send("anchor_getAnchorById", [anchorId]);
+        return new AnchorData(anchor['id'], anchor['doc_root'], anchor['anchored_block']);
     }
 
     async findPreAnchor(anchorId: string): Promise<PreAnchorData> {
-        let preAnchor = await this.api.query.anchorModule.preAnchors(anchorId);
+        let preAnchor = await this.connection.api.query.anchorModule.preAnchors(anchorId);
         return new PreAnchorData(
                 bnToHex((<any>preAnchor)['signing_root']), 
                 bnToHex((<any>preAnchor)['identity']), 
