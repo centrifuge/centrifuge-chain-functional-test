@@ -1,7 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
 
-import { Anchoring } from './anchoring';
+import { Anchoring, AnchorParam } from './anchoring';
 import { TestGlobals } from './test_globals';
 import { newRandomCommitParam, newRandomAnchorParams } from './testutil';
 import { u8aToHex } from '@polkadot/util';
@@ -17,9 +17,14 @@ describe('Anchoring', () => {
     anchorer.commit(ancParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {
-          let anchor = await anchorer.findAnchor(ancParam.getAnchorId());
+          let ancId = ancParam.getAnchorId();
+          let anchor = await anchorer.findAnchor(ancId);
           expect(anchor.docRoot).to.equal(ancParam.docRoot);
-          expect(anchor.id).to.equal(ancParam.getAnchorId());
+          expect(anchor.id).to.equal(ancId);
+          let evictionDate = await anchorer.findAnchorEvictionDate(ancId);
+          expect(ancParam.storedUntil.getUTCDay()).to.lte(evictionDate.getUTCDay());
+          expect(ancParam.storedUntil.getUTCMonth()).to.lte(evictionDate.getUTCMonth());
+          expect(ancParam.storedUntil.getUTCFullYear()).to.lte(evictionDate.getUTCFullYear());
 
           // committing same anchor twice must FAIL
           anchorer.commit(ancParam).signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {

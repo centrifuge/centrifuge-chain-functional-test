@@ -19,11 +19,13 @@ export class AnchorParam {
     idPreImage: string;
     docRoot: string;
     proof: string;
+    storedUntil: Date;
 
-    constructor(idPreImage: string, docRoot: string, proof: string) {
+    constructor(idPreImage: string, docRoot: string, proof: string, storedUntil: Date) {
         this.idPreImage = idPreImage;
         this.docRoot = docRoot;
         this.proof = proof;
+        this.storedUntil = storedUntil;
     }
 
     getAnchorId(): string {
@@ -74,12 +76,17 @@ export class Anchoring {
     }
 
     commit(data: AnchorParam): SubmittableExtrinsic {
-        return this.connection.api.tx.anchorModule.commit(data.idPreImage, data.docRoot, data.proof);
+        return this.connection.api.tx.anchorModule.commit(data.idPreImage, data.docRoot, data.proof, data.storedUntil.getTime());
     }
 
     async findAnchor(anchorId: string): Promise<AnchorData> {
         let anchor = await this.connection.provider.send("anchor_getAnchorById", [anchorId]);
         return new AnchorData(anchor['id'], anchor['doc_root'], anchor['anchored_block']);
+    }
+
+    async findAnchorEvictionDate(anchorId: string): Promise<Date> {
+        let storedUntilInDays = await this.connection.api.query.anchorModule.anchorEvictDates(anchorId);
+        return new Date((+storedUntilInDays.toString()) * 86400000);
     }
 
     async findPreAnchor(anchorId: string): Promise<PreAnchorData> {

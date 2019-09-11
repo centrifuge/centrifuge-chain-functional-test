@@ -6,7 +6,7 @@ import { blake2AsHex } from '@polkadot/util-crypto';
 import { bnToHex, bufferToU8a, u8aConcat, u8aToHex, u8aToString } from '@polkadot/util';
 
 export function newRandomCommitParam(): AnchorCommitParam {
-    return new AnchorCommitParam(bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))));
+    return new AnchorCommitParam(bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))), new Date(new Date().getTime() + 200000000));
 }
 
 export class RandomAnchor {
