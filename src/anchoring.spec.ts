@@ -22,9 +22,7 @@ describe('Anchoring', () => {
           expect(anchor.docRoot).to.equal(ancParam.docRoot);
           expect(anchor.id).to.equal(ancId);
           let evictionDate = await anchorer.findAnchorEvictionDate(ancId);
-          expect(ancParam.storedUntil.getUTCDay()).to.lte(evictionDate.getUTCDay());
-          expect(ancParam.storedUntil.getUTCMonth()).to.lte(evictionDate.getUTCMonth());
-          expect(ancParam.storedUntil.getUTCFullYear()).to.lte(evictionDate.getUTCFullYear());
+          expect(ancParam.storedUntil).to.lte(evictionDate);
 
           // committing same anchor twice must FAIL
           anchorer.commit(ancParam).signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
@@ -45,15 +43,15 @@ describe('Anchoring', () => {
   it('should pre-commit anchor and not allow to pre-commit the same before expiration', (cb) => {
     const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomAnchorParams();
-    anchorer.preCommit(ancParam.preAnchorParam)
+    anchorer.preCommit(ancParam.preCommitParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {
-          let anchor = await anchorer.findPreAnchor(ancParam.preAnchorParam.anchorId);
-          expect(anchor.signingRoot).to.equal(ancParam.preAnchorParam.signingRoot);
+          let anchor = await anchorer.findPreCommit(ancParam.preCommitParam.anchorId);
+          expect(anchor.signingRoot).to.equal(ancParam.preCommitParam.signingRoot);
           expect(anchor.identity).to.equal(u8aToHex(TestGlobals.accMan.getAccountByIndex(0).publicKey));
 
           // pre-committing same anchor before expiration of previous pre-commit must FAIL
-          anchorer.preCommit(ancParam.preAnchorParam)
+          anchorer.preCommit(ancParam.preCommitParam)
             .signAndSend(TestGlobals.accMan.getAccountByIndex(1), async ({ events = [], status }) => {
               if (status.isFinalized) {
                 events.forEach(async ({ phase, event: { data, method, section } }) => {
@@ -71,7 +69,7 @@ describe('Anchoring', () => {
   it('should pre-commit and the commit anchor with document proof', (cb) => {
     const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomAnchorParams();
-    anchorer.preCommit(ancParam.preAnchorParam)
+    anchorer.preCommit(ancParam.preCommitParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {
           anchorer.commit(ancParam.anchorParam)
@@ -90,7 +88,7 @@ describe('Anchoring', () => {
   it('should pre-commit and the commit anchor from another account must fail', (cb) => {
     const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomAnchorParams();
-    anchorer.preCommit(ancParam.preAnchorParam)
+    anchorer.preCommit(ancParam.preCommitParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {
           anchorer.commit(ancParam.anchorParam)

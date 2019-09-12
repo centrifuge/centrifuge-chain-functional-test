@@ -23,7 +23,7 @@ export async function connect(wsURL: string): Promise<Connection> {
           "doc_root": "H256",
           "anchored_block": "u64"
         },
-        PreAnchorData: {
+        PreCommitData: {
           "signing_root": "H256",
           "identity": "H256",
           "expiration_block": "u64",
