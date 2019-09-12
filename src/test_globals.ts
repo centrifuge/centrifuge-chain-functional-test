@@ -1,9 +1,9 @@
 import { Config } from "./config";
-import { ApiPromise } from "@polkadot/api";
 import { AccountManager } from "./account_manager";
+import { Connection } from "./connect";
 
 export class TestGlobals {
     static testConfig: Config;
-    static api: ApiPromise;
+    static connection: Connection;
     static  accMan: AccountManager;
 }

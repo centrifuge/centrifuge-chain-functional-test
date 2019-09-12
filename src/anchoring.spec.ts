@@ -1,7 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
 
-import { Anchoring } from './anchoring';
+import { Anchoring, AnchorParam } from './anchoring';
 import { TestGlobals } from './test_globals';
 import { newRandomCommitParam, newRandomAnchorParams } from './testutil';
 import { u8aToHex } from '@polkadot/util';
@@ -12,14 +12,17 @@ import { Keyring } from '@polkadot/keyring';
 describe('Anchoring', () => {
 
   it('should commit anchor and not allow the same to be committed again', (cb) => {
-    const anchorer = new Anchoring(TestGlobals.api);
+    const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomCommitParam();
     anchorer.commit(ancParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {
-          let anchor = await anchorer.findAnchor(ancParam.getAnchorId());
+          let ancId = ancParam.getAnchorId();
+          let anchor = await anchorer.findAnchor(ancId);
           expect(anchor.docRoot).to.equal(ancParam.docRoot);
-          expect(anchor.id).to.equal(ancParam.getAnchorId());
+          expect(anchor.id).to.equal(ancId);
+          let evictionDate = await anchorer.findAnchorEvictionDate(ancId);
+          expect(ancParam.storedUntil).to.lte(evictionDate);
 
           // committing same anchor twice must FAIL
           anchorer.commit(ancParam).signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
@@ -38,17 +41,17 @@ describe('Anchoring', () => {
   });
 
   it('should pre-commit anchor and not allow to pre-commit the same before expiration', (cb) => {
-    const anchorer = new Anchoring(TestGlobals.api);
+    const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomAnchorParams();
-    anchorer.preCommit(ancParam.preAnchorParam)
+    anchorer.preCommit(ancParam.preCommitParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {
-          let anchor = await anchorer.findPreAnchor(ancParam.preAnchorParam.anchorId);
-          expect(anchor.signingRoot).to.equal(ancParam.preAnchorParam.signingRoot);
+          let anchor = await anchorer.findPreCommit(ancParam.preCommitParam.anchorId);
+          expect(anchor.signingRoot).to.equal(ancParam.preCommitParam.signingRoot);
           expect(anchor.identity).to.equal(u8aToHex(TestGlobals.accMan.getAccountByIndex(0).publicKey));
 
           // pre-committing same anchor before expiration of previous pre-commit must FAIL
-          anchorer.preCommit(ancParam.preAnchorParam)
+          anchorer.preCommit(ancParam.preCommitParam)
             .signAndSend(TestGlobals.accMan.getAccountByIndex(1), async ({ events = [], status }) => {
               if (status.isFinalized) {
                 events.forEach(async ({ phase, event: { data, method, section } }) => {
@@ -64,9 +67,9 @@ describe('Anchoring', () => {
   });
 
   it('should pre-commit and the commit anchor with document proof', (cb) => {
-    const anchorer = new Anchoring(TestGlobals.api);
+    const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomAnchorParams();
-    anchorer.preCommit(ancParam.preAnchorParam)
+    anchorer.preCommit(ancParam.preCommitParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {
           anchorer.commit(ancParam.anchorParam)
@@ -83,9 +86,9 @@ describe('Anchoring', () => {
   });
 
   it('should pre-commit and the commit anchor from another account must fail', (cb) => {
-    const anchorer = new Anchoring(TestGlobals.api);
+    const anchorer = new Anchoring(TestGlobals.connection);
     let ancParam = newRandomAnchorParams();
-    anchorer.preCommit(ancParam.preAnchorParam)
+    anchorer.preCommit(ancParam.preCommitParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {
           anchorer.commit(ancParam.anchorParam)
@@ -110,17 +113,17 @@ describe('Anchoring', () => {
     const testAcc = keyring.addFromUri('//TestAcc');
     console.log(testAcc.address);
 
-    let funderNonce = await TestGlobals.api.query.system.accountNonce(alice.address);
+    let funderNonce = await TestGlobals.connection.api.query.system.accountNonce(alice.address);
     let funderNonceRaw = +funderNonce.toString();
 
     try {
-      const accBalance = await TestGlobals.api.query.balances.freeBalance(charlie.address);
+      const accBalance = await TestGlobals.connection.api.query.balances.freeBalance(charlie.address);
       for (let i = 0; i < 5; i++) {
         const testAcc = keyring.addFromUri('//TestAcc' + i);
-        const accBalance = await TestGlobals.api.query.balances.freeBalance(testAcc.address);
+        const accBalance = await TestGlobals.connection.api.query.balances.freeBalance(testAcc.address);
         console.log(testAcc.address);
         let start = new Date();
-        let res = await senderFunction(TestGlobals.api, testAcc.address, alice, 100000, funderNonceRaw);
+        let res = await senderFunction(TestGlobals.connection.api, testAcc.address, alice, 100000, funderNonceRaw);
         //console.log(res);
         funderNonceRaw++;
         let firstTxTime = new Date();

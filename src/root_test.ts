@@ -9,19 +9,19 @@ before(async () => {
     TestGlobals.testConfig = new Config(config);
 
     // api obj
-    TestGlobals.api = await connect(TestGlobals.testConfig.getCentChainEndpoint());
+    TestGlobals.connection = await connect(TestGlobals.testConfig.getCentChainEndpoint());
     const [chain, nodeName, nodeVersion] = await Promise.all([
-        TestGlobals.api.rpc.system.chain(),
-        TestGlobals.api.rpc.system.name(),
-        TestGlobals.api.rpc.system.version()
+        TestGlobals.connection.api.rpc.system.chain(),
+        TestGlobals.connection.api.rpc.system.name(),
+        TestGlobals.connection.api.rpc.system.version()
     ]);
     console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
 
     // create test accounts
     TestGlobals.accMan = new AccountManager(TestGlobals.testConfig);
-    await TestGlobals.accMan.createTestAccounts(TestGlobals.api, 3, 1000000);
+    await TestGlobals.accMan.createTestAccounts(TestGlobals.connection.api, 3, 1000000);
 });
 
 after(async () => {
-    TestGlobals.api.disconnect();
+    TestGlobals.connection.api.disconnect();
 });

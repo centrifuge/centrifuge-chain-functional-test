@@ -1,4 +1,4 @@
-import { AnchorParam as AnchorCommitParam, PreAnchorParam as AnchorPreCommitParam } from "./anchoring";
+import { AnchorParam as AnchorCommitParam, PreCommitParam as AnchorPreCommitParam } from "./anchoring";
 import crypto from 'crypto';
 import BN from 'bn.js';
 import { blake2AsHex } from '@polkadot/util-crypto';
@@ -6,18 +6,18 @@ import { blake2AsHex } from '@polkadot/util-crypto';
 import { bnToHex, bufferToU8a, u8aConcat, u8aToHex, u8aToString } from '@polkadot/util';
 
 export function newRandomCommitParam(): AnchorCommitParam {
-    return new AnchorCommitParam(bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))));
+    return new AnchorCommitParam(bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))), bnToHex(new BN(crypto.randomBytes(32))), new Date(new Date().getTime() + 200000000));
 }
 
 export class RandomAnchor {
-    preAnchorParam: AnchorPreCommitParam;
+    preCommitParam: AnchorPreCommitParam;
     anchorParam: AnchorCommitParam;
 
     constructor(
-        preAnchorData: AnchorPreCommitParam,
+        preCommitData: AnchorPreCommitParam,
         anchorData: AnchorCommitParam) {
         this.anchorParam = anchorData;
-        this.preAnchorParam = preAnchorData;
+        this.preCommitParam = preCommitData;
     }
 }
 

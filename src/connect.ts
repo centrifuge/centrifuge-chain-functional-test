@@ -1,22 +1,35 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 
-export async function connect(wsURL: string): Promise<ApiPromise> {
+export class Connection {
+
+  provider: WsProvider;
+
+  api: ApiPromise;
+
+  constructor(provider: WsProvider, api: ApiPromise) {
+    this.api = api;
+    this.provider = provider;
+  }
+}
+
+export async function connect(wsURL: string): Promise<Connection> {
     // Initialise the provider to connect to the local node
     const provider = new WsProvider(wsURL);
     // initialise via static create
-    return await ApiPromise.create({
-        types: {
-          AnchorData: {
-            "id": "H256",
-            "doc_root": "H256",
-            "anchored_block": "u64"
-          },
-          PreAnchorData: {
-            "signing_root": "H256",
-            "identity": "H256",
-            "expiration_block": "u64",
-          }
+    const api = await ApiPromise.create({
+      types: {
+        AnchorData: {
+          "id": "H256",
+          "doc_root": "H256",
+          "anchored_block": "u64"
         },
-        provider: provider
-      });
+        PreCommitData: {
+          "signing_root": "H256",
+          "identity": "H256",
+          "expiration_block": "u64",
+        }
+      },
+      provider: provider
+    });
+    return new Connection(provider, api);
 }

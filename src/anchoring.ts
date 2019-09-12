@@ -1,9 +1,9 @@
-import { ApiPromise } from '@polkadot/api';
 import { SubmittableExtrinsic } from '@polkadot/api/promise/types';
 import { bnToHex, hexToU8a } from '@polkadot/util';
 import { blake2AsHex } from '@polkadot/util-crypto';
+import { Connection } from './connect';
 
-export class PreAnchorParam {
+export class PreCommitParam {
     anchorId: string;
     signingRoot: string;
 
@@ -19,11 +19,13 @@ export class AnchorParam {
     idPreImage: string;
     docRoot: string;
     proof: string;
+    storedUntil: Date;
 
-    constructor(idPreImage: string, docRoot: string, proof: string) {
+    constructor(idPreImage: string, docRoot: string, proof: string, storedUntil: Date) {
         this.idPreImage = idPreImage;
         this.docRoot = docRoot;
         this.proof = proof;
+        this.storedUntil = storedUntil;
     }
 
     getAnchorId(): string {
@@ -32,7 +34,7 @@ export class AnchorParam {
     }
 }
 
-export class PreAnchorData {
+export class PreCommitData {
     signingRoot: string;
     identity: string;
     expirationBlock: string;
@@ -63,30 +65,35 @@ export class AnchorData {
 
 export class Anchoring {
 
-    private api: ApiPromise;
+    private connection:  Connection;
 
-    constructor(api: ApiPromise) {
-        this.api = api;
+    constructor(con: Connection) {
+        this.connection = con;
     }
 
-    preCommit(data: PreAnchorParam): SubmittableExtrinsic {
-        return this.api.tx.anchorModule.preCommit(data.anchorId, data.signingRoot);
+    preCommit(data: PreCommitParam): SubmittableExtrinsic {
+        return this.connection.api.tx.anchorModule.preCommit(data.anchorId, data.signingRoot);
     }
 
     commit(data: AnchorParam): SubmittableExtrinsic {
-        return this.api.tx.anchorModule.commit(data.idPreImage, data.docRoot, data.proof);
+        return this.connection.api.tx.anchorModule.commit(data.idPreImage, data.docRoot, data.proof, data.storedUntil.getTime());
     }
 
     async findAnchor(anchorId: string): Promise<AnchorData> {
-        let anchor = await this.api.query.anchorModule.anchors(anchorId);
-        return new AnchorData(bnToHex((<any>anchor)['id']), bnToHex((<any>anchor)['doc_root']), bnToHex((<any>anchor)['anchored_block']));
+        let anchor = await this.connection.provider.send("anchor_getAnchorById", [anchorId]);
+        return new AnchorData(anchor['id'], anchor['doc_root'], anchor['anchored_block']);
     }
 
-    async findPreAnchor(anchorId: string): Promise<PreAnchorData> {
-        let preAnchor = await this.api.query.anchorModule.preAnchors(anchorId);
-        return new PreAnchorData(
-                bnToHex((<any>preAnchor)['signing_root']), 
-                bnToHex((<any>preAnchor)['identity']), 
-                bnToHex((<any>preAnchor)['expiration_block']));
+    async findAnchorEvictionDate(anchorId: string): Promise<Date> {
+        let storedUntilInDays = await this.connection.api.query.anchorModule.anchorEvictDates(anchorId);
+        return new Date((+storedUntilInDays.toString()) * 86400000);
+    }
+
+    async findPreCommit(anchorId: string): Promise<PreCommitData> {
+        let preCommit = await this.connection.api.query.anchorModule.preCommits(anchorId);
+        return new PreCommitData(
+                bnToHex((<any>preCommit)['signing_root']), 
+                bnToHex((<any>preCommit)['identity']), 
+                bnToHex((<any>preCommit)['expiration_block']));
     }
 }
