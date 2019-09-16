@@ -100,21 +100,17 @@ export class AccountManager {
         return new Promise<any>((resolve: Function, reject: Function) => {
           api.tx.balances.transfer(receiver, value).sign(sender, { nonce: nonce })
             .send(({ events = [], status }) => {
-              console.log('Transaction status:', status.type);
+              //console.log('Transaction status:', status.type);
         
               if (status.isFinalized) {
-                console.log('Completed at block hash', status.asFinalized.toHex());
-                console.log('Events:');
+                // console.log('Completed at block hash', status.asFinalized.toHex());
+                // console.log('Events:');
         
                 events.forEach(({ phase, event: { data, method, section } }) => {
-                  console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
+                  //console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
                 });
       
                 resolve(events);
-      
-                //cb();
-        
-                //process.exit(0);
               }
             });
         })
