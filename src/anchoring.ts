@@ -72,11 +72,11 @@ export class Anchoring {
     }
 
     preCommit(data: PreCommitParam): SubmittableExtrinsic {
-        return this.connection.api.tx.anchorModule.preCommit(data.anchorId, data.signingRoot);
+        return this.connection.api.tx.anchor.preCommit(data.anchorId, data.signingRoot);
     }
 
     commit(data: AnchorParam): SubmittableExtrinsic {
-        return this.connection.api.tx.anchorModule.commit(data.idPreImage, data.docRoot, data.proof, data.storedUntil.getTime());
+        return this.connection.api.tx.anchor.commit(data.idPreImage, data.docRoot, data.proof, data.storedUntil.getTime());
     }
 
     async findAnchor(anchorId: string): Promise<AnchorData> {
@@ -85,12 +85,12 @@ export class Anchoring {
     }
 
     async findAnchorEvictionDate(anchorId: string): Promise<Date> {
-        let storedUntilInDays = await this.connection.api.query.anchorModule.anchorEvictDates(anchorId);
+        let storedUntilInDays = await this.connection.api.query.anchor.anchorEvictDates(anchorId);
         return new Date((+storedUntilInDays.toString()) * 86400000);
     }
 
     async findPreCommit(anchorId: string): Promise<PreCommitData> {
-        let preCommit = await this.connection.api.query.anchorModule.preCommits(anchorId);
+        let preCommit = await this.connection.api.query.anchor.preCommits(anchorId);
         return new PreCommitData(
                 bnToHex((<any>preCommit)['signing_root']), 
                 bnToHex((<any>preCommit)['identity']), 
