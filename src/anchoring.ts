@@ -79,6 +79,10 @@ export class Anchoring {
         return this.connection.api.tx.anchor.commit(data.idPreImage, data.docRoot, data.proof, data.storedUntil.getTime());
     }
 
+    moveAnchor(anchorId: string): SubmittableExtrinsic {
+        return this.connection.api.tx.anchor.moveAnchor(anchorId);
+    }
+
     async findAnchor(anchorId: string): Promise<AnchorData> {
         let anchor = await this.connection.provider.send("anchor_getAnchorById", [anchorId]);
         return new AnchorData(anchor['id'], anchor['doc_root'], anchor['anchored_block']);

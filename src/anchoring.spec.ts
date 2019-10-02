@@ -106,6 +106,55 @@ describe('Anchoring', () => {
       });
   });
 
+  it('should commit anchor and move anchor', (cb) => {
+    const anchorer = new Anchoring(TestGlobals.connection);
+    let ancParam = newRandomCommitParam();
+    anchorer.commit(ancParam)
+        .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
+          if (status.isFinalized) {
+            let ancId = ancParam.getAnchorId();
+            let anchor = await anchorer.findAnchor(ancId);
+            expect(anchor.docRoot).to.equal(ancParam.docRoot);
+            expect(anchor.id).to.equal(ancId);
+            let evictionDate = await anchorer.findAnchorEvictionDate(ancId);
+            expect(ancParam.storedUntil).to.lte(evictionDate);
+
+            anchorer.moveAnchor(anchor.id)
+                .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({events = [], status}) => {
+                    if (status.isFinalized){
+                      // check events for triggered move anchor event
+                      events.forEach(async ({ phase, event: { data, method, section } }) => {
+                        if (section === 'anchor'){
+                          expect(method).to.equal('MoveAnchor');
+                          expect(data[0].toHex(false)).to.equal(anchor.id);
+                          expect(data[1].toHex(false)).to.equal(anchor.docRoot);
+                          cb();
+                        }
+                      });
+                    }
+                });
+          }
+        });
+  });
+
+  it('move anchor failed', (cb) => {
+    const anchorer = new Anchoring(TestGlobals.connection);
+    let ancParam = newRandomCommitParam();
+    anchorer.moveAnchor(ancParam.getAnchorId())
+        .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({events = [], status}) => {
+          if (status.isFinalized){
+            // check events for triggered move anchor event
+            events.forEach(async ({ phase, event: { data, method, section } }) => {
+              if (section === 'system'){
+                expect(method).to.equal('ExtrinsicFailed');
+                cb();
+              }
+            });
+          }
+        });
+  });
+
+
   xit('should transfer balance correctly', async () => {
     let keyring = new Keyring({ type: 'sr25519' });
     const alice = keyring.addFromUri('//Alice');
