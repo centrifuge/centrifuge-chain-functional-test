@@ -1,10 +1,11 @@
-import { ApiPromise } from '@polkadot/api';
-import { Keyring } from '@polkadot/keyring';
-import { KeyringPair } from '@polkadot/keyring/types';
-import { Config } from './config';
-import { IKeyringPair } from '@polkadot/types/types';
+import { ApiPromise } from "@polkadot/api";
+import { Keyring } from "@polkadot/keyring";
+import { KeyringPair } from "@polkadot/keyring/types";
+import { IKeyringPair } from "@polkadot/types/types";
+import BN from "bn.js";
+import { Config } from "./config";
 
-const DEFAULT_ACCOUNTS_MNEMONIC_PREFIX = 'Test';
+const DEFAULT_ACCOUNTS_MNEMONIC_PREFIX = "Test";
 
 export class AccountManager {
 
@@ -15,24 +16,25 @@ export class AccountManager {
     private config: Config;
 
     constructor(config: Config) {
-        this.keyring = new Keyring({ type: 'sr25519' });
+        this.keyring = new Keyring({ type: "sr25519" });
         this.accountMnemonicPrefix = DEFAULT_ACCOUNTS_MNEMONIC_PREFIX;
         this.config = config;
     }
 
     /**
-     * This will create a fixed number of permanant test accounts plus some new accounts(nAdditionalAccounts) when called. 
-     * Permanant accounts are maintained with a provided balance if they already exist. All accounts are funded using 'FUNDING_ACCOUNT' test account 
-     * which is expected to have some balance at the start of the tests. 
+     * This will create a fixed number of permanant test accounts plus some new accounts(nAdditionalAccounts) when
+     * called.
+     * Permanant accounts are maintained with a provided balance if they already exist. All accounts are funded using
+     * 'FUNDING_ACCOUNT' test account which is expected to have some balance at the start of the tests.
      * @param api api client.
      * @param nAdditionalAccounts number additional accounts to create indexed by some sequence number.
      * @param minBalance minimum balance for the test accounts.
      * @param accountMnemonicPrefix prefix for additional account mnemonics.
      */
-    async createTestAccounts(
-            api: ApiPromise, 
-            nAdditionalAccounts: number, 
-            minBalance: number,
+    public async createTestAccounts(
+            api: ApiPromise,
+            nAdditionalAccounts: number,
+            minBalance: BN,
             accountMnemonicPrefix: string = DEFAULT_ACCOUNTS_MNEMONIC_PREFIX) {
 
         this.accountMnemonicPrefix = accountMnemonicPrefix;
@@ -40,83 +42,81 @@ export class AccountManager {
         // Add funding account to our keyring
         const funder = this.keyring.addFromUri(this.config.getFundingAccountSURI());
         const fundersBalance = await api.query.balances.freeBalance(funder.address);
-        let fundersBalanceRaw = +fundersBalance.toString();
 
         // funders balance must be higher than the maximum required balance to be transfered to other accounts
-        if (fundersBalanceRaw < minBalance * (this.config.getPermanantAccountSURIs().length + nAdditionalAccounts) ) {
-            throw new Error('Funder is too poor to pay for the test accounts');
+        if (fundersBalance.lt(minBalance.muln(this.config.getPermanantAccountSURIs().length + nAdditionalAccounts))) {
+            throw new Error("Funder is too poor to pay for the test accounts");
         }
 
         // execute transfers sequencially so that nonce can be properly updated for funder
-        let funderNonce = await api.query.system.accountNonce(funder.address);
-        let funderNonceRaw = +funderNonce.toString();
+        const funderNonce = await api.query.system.accountNonce(funder.address);
 
         // generate the prefixes for additional test accounts
-        let additionalAccMnemonics: string[] = [];
+        const additionalAccMnemonics: string[] = [];
         for (let i = 0; i < nAdditionalAccounts; i++) {
             // generate accounts of suri format //{accountMnemonicPrefix}_i . Eg: //Test_1
-            additionalAccMnemonics.push('//' + this.accountMnemonicPrefix + '_' + i);
+            additionalAccMnemonics.push("//" + this.accountMnemonicPrefix + "_" + i);
         }
 
-        let allAccountMnemonics = this.config.getPermanantAccountSURIs().concat(additionalAccMnemonics);
+        const allAccountMnemonics = this.config.getPermanantAccountSURIs().concat(additionalAccMnemonics);
 
         // make sure the all accounts have enough balance
-        console.log('*********** logging account addresses ***********');
-        for (let accM in allAccountMnemonics) {
-            const acc = this.keyring.addFromUri(allAccountMnemonics[accM]);
-            // TODO test this when we upgrade substrate for the chain next time. For now it always 
-            // transfers the min balance to the accounts. Since otherwise it causes an error where `Transaction status: Future`.
-            // const accBalance = await api.query.balances.freeBalance(acc.address);
-            const accBalanceRaw = 0;
+        console.log("*********** logging account addresses ***********");
+        for (const accM of allAccountMnemonics) {
+            const acc = this.keyring.addFromUri(accM);
+            // TODO test this when we upgrade substrate for the chain next time. For now it always
+            // transfers the min balance to the accounts. Since otherwise it causes an error where `Transaction status:
+            // Future`.
+            const accBalance = await api.query.balances.freeBalance(acc.address);
             console.log(acc.address);
-            
 
-            if (accBalanceRaw < minBalance) {
+            if (accBalance.lt(minBalance)) {
                 try {
-                    let res = await this.senderFunction(api, acc.address, funder, minBalance - accBalanceRaw, funderNonceRaw);
-                    //console.log(res);
+                    const res = await this.senderFunction(api, acc.address, funder, minBalance.sub(accBalance),
+                    funderNonce);
+                    // console.log(res);
                 } catch (e) {
                     console.log(e);
                 }
+                // update nonce
+                funderNonce.iaddn(1);
             }
-
-            // update nonce
-            funderNonceRaw++;
         }
-        console.log('*********** end logging account addresses ***********');
+        console.log("*********** end logging account addresses ***********");
     }
 
-    getAccount(suri: string): KeyringPair {
-        let pair = this.keyring.createFromUri(suri);
+    public getAccount(suri: string): KeyringPair {
+        const pair = this.keyring.createFromUri(suri);
         return this.keyring.getPair(pair.address);
     }
 
-    getAccountByIndex(i: number): KeyringPair {
-        let pair = this.keyring.createFromUri('//' + this.accountMnemonicPrefix + '_' + i);
+    public getAccountByIndex(i: number): KeyringPair {
+        const pair = this.keyring.createFromUri("//" + this.accountMnemonicPrefix + "_" + i);
         return this.keyring.getPair(pair.address);
     }
 
-    senderFunction(api: ApiPromise, receiver: string, sender: IKeyringPair, value: number, nonce: number): Promise<any> {
-        return new Promise<any>((resolve: Function, reject: Function) => {
-          api.tx.balances.transfer(receiver, value).sign(sender, { nonce: nonce })
+    public senderFunction(api: ApiPromise, receiver: string, sender: IKeyringPair, value: BN|number, nonce: BN|number):
+        Promise<any> {
+        return new Promise<any>((resolve, reject) => {
+          api.tx.balances.transfer(receiver, value).sign(sender, { nonce })
             .send(({ events = [], status }) => {
-              console.log('Transaction status:', status.type);
-        
+              console.log("Transaction status:", status.type);
+
               if (status.isFinalized) {
-                console.log('Completed at block hash', status.asFinalized.toHex());
-                console.log('Events:');
-        
+                console.log("Completed at block hash", status.asFinalized.toHex());
+                console.log("Events:");
+
                 events.forEach(({ phase, event: { data, method, section } }) => {
-                  console.log('\t', phase.toString(), `: ${section}.${method}`, data.toString());
+                  console.log("\t", phase.toString(), `: ${section}.${method}`, data.toString());
                 });
-      
+
                 resolve(events);
-      
-                //cb();
-        
-                //process.exit(0);
+
+                // cb();
+
+                // process.exit(0);
               }
             });
-        })
+        });
       }
 }
