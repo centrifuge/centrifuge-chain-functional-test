@@ -11,9 +11,14 @@ import { newRandomAnchorParams, newRandomCommitParam } from "./testutil";
 
 describe("Anchoring", () => {
 
-  it.only("should commit anchor and not allow the same to be committed again", (cb) => {
+  it("should commit anchor and not allow the same to be committed again", (cb) => {
     const anchorer = new Anchoring(TestGlobals.connection);
     const ancParam = newRandomCommitParam();
+
+    // const a = TestGlobals.accMan.getAccountByIndex(0);
+    // const balance = await TestGlobals.connection.api.query.balances.freeBalance(a.address);
+    // console.log("Got balance for account", a.address, balance.toString());
+
     anchorer.commit(ancParam)
       .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
         if (status.isFinalized) {

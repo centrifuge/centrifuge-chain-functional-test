@@ -50,7 +50,6 @@ export class AccountManager {
 
         // execute transfers sequencially so that nonce can be properly updated for funder
         const funderNonce = await api.query.system.accountNonce(funder.address);
-        funderNonce.isubn(1);
 
         // generate the prefixes for additional test accounts
         const additionalAccMnemonics: string[] = [];
@@ -63,9 +62,8 @@ export class AccountManager {
 
         // make sure the all accounts have enough balance
         console.log("*********** logging account addresses ***********");
-        // tslint:disable-next-line:forin
-        for (const accM in allAccountMnemonics) {
-            const acc = this.keyring.addFromUri(allAccountMnemonics[accM]);
+        for (const accM of allAccountMnemonics) {
+            const acc = this.keyring.addFromUri(accM);
             // TODO test this when we upgrade substrate for the chain next time. For now it always
             // transfers the min balance to the accounts. Since otherwise it causes an error where `Transaction status:
             // Future`.
@@ -74,18 +72,15 @@ export class AccountManager {
 
             if (accBalance.lt(minBalance)) {
                 try {
-                    console.log("Will transfer with nonce", funderNonce.toString());
                     const res = await this.senderFunction(api, acc.address, funder, minBalance.sub(accBalance),
                     funderNonce);
-                    console.log("Did transfer");
                     // console.log(res);
                 } catch (e) {
                     console.log(e);
                 }
+                // update nonce
+                funderNonce.iaddn(1);
             }
-
-            // update nonce
-            funderNonce.iaddn(1);
         }
         console.log("*********** end logging account addresses ***********");
     }
