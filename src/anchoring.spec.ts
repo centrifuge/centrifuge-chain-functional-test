@@ -160,7 +160,7 @@ describe("Anchoring", () => {
         });
   });
 
-  xit("should transfer balance correctly", async () => {
+  it("should transfer balance correctly", async () => {
     const keyring = new Keyring({ type: "sr25519" });
     const alice = keyring.addFromUri("//Alice");
     const charlie = keyring.addFromUri("//Charlie");
