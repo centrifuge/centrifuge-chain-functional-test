@@ -23,7 +23,7 @@
     "typescript": "^3.7.3"
   },
   "dependencies": {
-    "@polkadot/api": "^0.99.1",
+    "@polkadot/api": "^0.100.0-beta.12",
     "@polkadot/keyring": "^1.7.1",
     "bn.js": "^5.0.0",
     "web3-utils": "^1.2.4"

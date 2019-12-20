@@ -19,27 +19,28 @@ export async function connect(wsURL: string): Promise<Connection> {
     // tslint:disable:object-literal-sort-keys
     const api = await ApiPromise.create({
       types: {
-        "AnchorData": {
+        AnchorData: {
           id: "H256",
           doc_root: "H256",
           anchored_block: "u64",
         },
-        "Fee": {
+        Fee: {
           key: "Hash",
           price: "Balance",
         },
-        "PreCommitData": {
+        PreCommitData: {
           signing_root: "H256",
           identity: "H256",
           expiration_block: "u64",
         },
-        "proofs::Proof": {
-          leaf_hash: "Vec<u8>",
-          sorted_hashes: "Vec<u8>",
+        Proof: {
+          leaf_hash: "H256",
+          sorted_hashes: "H256",
         },
       },
       provider,
     });
     // tslint:enable:object-literal-sort-keys
+
     return new Connection(provider, api);
 }

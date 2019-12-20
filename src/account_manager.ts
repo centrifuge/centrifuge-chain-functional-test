@@ -2,6 +2,7 @@ import { ApiPromise } from "@polkadot/api";
 import { Keyring } from "@polkadot/keyring";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { IKeyringPair } from "@polkadot/types/types";
+import BN from "bn.js";
 import { Config } from "./config";
 
 const DEFAULT_ACCOUNTS_MNEMONIC_PREFIX = "Test";
@@ -33,7 +34,7 @@ export class AccountManager {
     public async createTestAccounts(
             api: ApiPromise,
             nAdditionalAccounts: number,
-            minBalance: number,
+            minBalance: BN,
             accountMnemonicPrefix: string = DEFAULT_ACCOUNTS_MNEMONIC_PREFIX) {
 
         this.accountMnemonicPrefix = accountMnemonicPrefix;
@@ -41,16 +42,15 @@ export class AccountManager {
         // Add funding account to our keyring
         const funder = this.keyring.addFromUri(this.config.getFundingAccountSURI());
         const fundersBalance = await api.query.balances.freeBalance(funder.address);
-        const fundersBalanceRaw = +fundersBalance.toString();
 
         // funders balance must be higher than the maximum required balance to be transfered to other accounts
-        if (fundersBalanceRaw < minBalance * (this.config.getPermanantAccountSURIs().length + nAdditionalAccounts) ) {
+        if (fundersBalance.lt(minBalance.muln(this.config.getPermanantAccountSURIs().length + nAdditionalAccounts))) {
             throw new Error("Funder is too poor to pay for the test accounts");
         }
 
         // execute transfers sequencially so that nonce can be properly updated for funder
         const funderNonce = await api.query.system.accountNonce(funder.address);
-        let funderNonceRaw = +funderNonce.toString();
+        funderNonce.isubn(1);
 
         // generate the prefixes for additional test accounts
         const additionalAccMnemonics: string[] = [];
@@ -70,13 +70,14 @@ export class AccountManager {
             // transfers the min balance to the accounts. Since otherwise it causes an error where `Transaction status:
             // Future`.
             const accBalance = await api.query.balances.freeBalance(acc.address);
-            const accBalanceRaw = 0;
             console.log(acc.address);
 
-            if (accBalanceRaw < minBalance) {
+            if (accBalance.lt(minBalance)) {
                 try {
-                    const res = await this.senderFunction(api, acc.address, funder, minBalance - accBalanceRaw,
-                        funderNonceRaw);
+                    console.log("Will transfer with nonce", funderNonce.toString());
+                    const res = await this.senderFunction(api, acc.address, funder, minBalance.sub(accBalance),
+                    funderNonce);
+                    console.log("Did transfer");
                     // console.log(res);
                 } catch (e) {
                     console.log(e);
@@ -84,7 +85,7 @@ export class AccountManager {
             }
 
             // update nonce
-            funderNonceRaw++;
+            funderNonce.iaddn(1);
         }
         console.log("*********** end logging account addresses ***********");
     }
@@ -99,9 +100,9 @@ export class AccountManager {
         return this.keyring.getPair(pair.address);
     }
 
-    public senderFunction(api: ApiPromise, receiver: string, sender: IKeyringPair, value: number, nonce: number):
+    public senderFunction(api: ApiPromise, receiver: string, sender: IKeyringPair, value: BN|number, nonce: BN|number):
         Promise<any> {
-        return new Promise<any>((resolve: Function, reject: Function) => {
+        return new Promise<any>((resolve, reject) => {
           api.tx.balances.transfer(receiver, value).sign(sender, { nonce })
             .send(({ events = [], status }) => {
               console.log("Transaction status:", status.type);
