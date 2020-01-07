@@ -161,27 +161,23 @@ describe("Anchoring", () => {
   });
 
   it("should transfer balance correctly", async () => {
-    const keyring = new Keyring({ type: "sr25519" });
-    const alice = keyring.addFromUri("//Alice");
-    const charlie = keyring.addFromUri("//Charlie");
-    const testAcc = keyring.addFromUri("//TestAcc");
-    console.log(testAcc.address);
+    const alice = TestGlobals.accMan.getAccountByIndex(0);
+    const charlie = TestGlobals.accMan.getAccountByIndex(1);
+    const testAcc = TestGlobals.accMan.getAccountByIndex(2);
 
     const funderNonce = await TestGlobals.connection.api.query.system.accountNonce(alice.address);
     let funderNonceRaw = +funderNonce.toString();
 
     try {
-      const accBalance = await TestGlobals.connection.api.query.balances.freeBalance(charlie.address);
+      await TestGlobals.connection.api.query.balances.freeBalance(charlie.address);
       for (let i = 0; i < 5; i++) {
-        // const testAcc = keyring.addFromUri("//TestAcc" + i);
-        // const accBalance = await TestGlobals.connection.api.query.balances.freeBalance(testAcc.address);
-        console.log(testAcc.address);
+        const accBalance = await TestGlobals.connection.api.query.balances.freeBalance(testAcc.address);
+        console.log("Balance for account " + testAcc.address + ": " + accBalance);
         const start = new Date();
         const res = await senderFunction(TestGlobals.connection.api, testAcc.address, alice, 100000, funderNonceRaw);
-        // console.log(res);
         funderNonceRaw++;
-        const firstTxTime = new Date();
-        console.log(i + "th tx time: ", firstTxTime.getTime() - start.getTime());
+        const nthTxTime = new Date();
+        console.log(i + "th tx time: ", nthTxTime.getTime() - start.getTime());
       }
     } catch (e) {
       console.log(e);
