@@ -1,9 +1,9 @@
-import { Config } from "./config";
 import { AccountManager } from "./account_manager";
+import { Config } from "./config";
 import { Connection } from "./connect";
 
 export class TestGlobals {
-    static testConfig: Config;
-    static connection: Connection;
-    static  accMan: AccountManager;
+    public static testConfig: Config;
+    public static connection: Connection;
+    public static  accMan: AccountManager;
 }
