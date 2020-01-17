@@ -6,6 +6,7 @@ import { Keyring } from "@polkadot/keyring";
 import { IKeyringPair } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util";
 import { Anchoring, AnchorParam } from "./anchoring";
+import { senderFunction } from "./balance";
 import { TestGlobals } from "./test_globals";
 import { newRandomAnchorParams, newRandomCommitParam } from "./testutil";
 
@@ -186,28 +187,3 @@ describe("Anchoring", () => {
 
   });
 });
-
-function senderFunction(api: ApiPromise, receiver: string, sender: IKeyringPair, value: number, nonce: number):
-  Promise<any> {
-  return new Promise<any>((resolve, reject) => {
-    api.tx.balances.transfer(receiver, value).sign(sender, { nonce })
-      .send(({ events = [], status }) => {
-        console.log("Transaction status:", status.type);
-
-        if (status.isFinalized) {
-          console.log("Completed at block hash", status.asFinalized.toHex());
-          console.log("Events:");
-
-          events.forEach(({ phase, event: { data, method, section } }) => {
-            console.log("\t", phase.toString(), `: ${section}.${method}`, data.toString());
-          });
-
-          resolve(events);
-
-          // cb();
-
-          // process.exit(0);
-        }
-      });
-  });
-}

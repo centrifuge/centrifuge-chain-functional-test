@@ -1,23 +1,23 @@
 export class Config {
-    private configJson: Object;
+    private configJson: any;
 
-    constructor(configJson: Object) {
+    constructor(configJson: any) {
         this.configJson = configJson;
     }
 
-    get(key: string):any {
-        return process.env[key.toUpperCase()] || (<any>this.configJson)[key];
+    public get(key: string): any {
+        return process.env[key.toUpperCase()] || (this.configJson as any)[key];
     }
 
-    getFundingAccountSURI(): string {
+    public getFundingAccountSURI(): string {
         return this.get("funding_account");
     }
 
-    getPermanantAccountSURIs(): string[] {
+    public getPermanantAccountSURIs(): string[] {
         return this.get("permanant_accounts");
     }
 
-    getCentChainEndpoint(): string {
+    public getCentChainEndpoint(): string {
         return this.get("centrifuge_chain_endpoint");
     }
 }
