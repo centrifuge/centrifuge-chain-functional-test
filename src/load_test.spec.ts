@@ -26,7 +26,7 @@ describe("Load tests", () => {
 
     const exts = await signAndSend(sender, subs);
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 50; i++) {
       const stopped = exts.filter((t) => t.stopAt !== null);
       const finalized = exts.filter((t) => t.status === "finalized");
 
