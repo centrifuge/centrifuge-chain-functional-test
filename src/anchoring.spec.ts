@@ -67,8 +67,12 @@ describe("Anchoring", () => {
                     cb();
                   }
                 });
+              } else if (sts.isDropped || sts.isInvalid || sts.isUsurped) {
+                throw new Error(`Extrinsic 2 was ${sts.type} ${sts.value}, events: ${events}`);
               }
             });
+        } else if (status.isDropped || status.isInvalid || status.isUsurped) {
+          throw new Error(`Extrinsic was ${status.type} ${status.value}, events: ${events}`);
         }
       });
   });
@@ -138,8 +142,12 @@ describe("Anchoring", () => {
                           cb();
                         }
                       });
+                    } else if (sts.isDropped || sts.isInvalid || sts.isUsurped) {
+                      throw new Error(`Extrinsic 2 was ${sts.type} ${sts.value}, events: ${events}`);
                     }
                 });
+          } else if (status.isDropped || status.isInvalid || status.isUsurped) {
+            throw new Error(`Extrinsic was ${status.type} ${status.value}, events: ${events}`);
           }
         });
   });
