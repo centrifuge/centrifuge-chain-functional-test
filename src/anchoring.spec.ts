@@ -117,57 +117,6 @@ describe("Anchoring", () => {
       });
   });
 
-  it("should commit anchor and move anchor", (cb) => {
-    const anchorer = new Anchoring(TestGlobals.connection);
-    const ancParam = newRandomCommitParam();
-    anchorer.commit(ancParam)
-        .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({ events = [], status }) => {
-          if (status.isFinalized) {
-            const ancId = ancParam.getAnchorId();
-            const anchor = await anchorer.findAnchor(ancId);
-            expect(anchor.docRoot).to.equal(ancParam.docRoot);
-            expect(anchor.id).to.equal(ancId);
-            const evictionDate = await anchorer.findAnchorEvictionDate(ancId);
-            expect(ancParam.storedUntil).to.lte(evictionDate);
-
-            anchorer.moveAnchor(anchor.id)
-                .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({events: evts = [], status: sts}) => {
-                    if (sts.isFinalized) {
-                      // check events for triggered move anchor event
-                      evts.forEach(async ({ phase, event: { data, method, section } }) => {
-                        if (section === "anchor") {
-                          expect(method).to.equal("MoveAnchor");
-                          expect(data[0].toHex(false)).to.equal(anchor.id);
-                          expect(data[1].toHex(false)).to.equal(anchor.docRoot);
-                          cb();
-                        }
-                      });
-                    } else if (sts.isDropped || sts.isInvalid || sts.isUsurped) {
-                      throw new Error(`Extrinsic 2 was ${sts.type} ${sts.value}, events: ${events}`);
-                    }
-                });
-          } else if (status.isDropped || status.isInvalid || status.isUsurped) {
-            throw new Error(`Extrinsic was ${status.type} ${status.value}, events: ${events}`);
-          }
-        });
-  });
-
-  it("move anchor failed", (cb) => {
-    const anchorer = new Anchoring(TestGlobals.connection);
-    const ancParam = newRandomCommitParam();
-    anchorer.moveAnchor(ancParam.getAnchorId())
-        .signAndSend(TestGlobals.accMan.getAccountByIndex(0), async ({events = [], status}) => {
-          if (status.isFinalized) {
-            // check events for triggered move anchor event
-            events.forEach(async ({ phase, event: { data, method, section } }) => {
-              if (section === "system") {
-                expect(method).to.equal("ExtrinsicFailed");
-                cb();
-              }
-            });
-          }
-        });
-  });
 
   it("should transfer balance correctly", async () => {
     const alice = TestGlobals.accMan.getAccountByIndex(0);
