@@ -12,8 +12,12 @@ interface ISender {
 
 describe("Load tests", () => {
   it("should send many txs in parallel and print aggregated statistics", async () => {
-    const sender: ISender = { keypair: TestGlobals.accMan.getAccountByIndex(0), nonce: new BN(0) };
-    [sender.nonce] = await TestGlobals.connection.api.query.system.account(sender.keypair.address);
+    const sender: ISender = {
+      keypair: TestGlobals.accMan.getAccountByIndex(0),
+      nonce: new BN(0)
+    };
+    const accInfo = await TestGlobals.connection.api.query.system.account(sender.keypair.address);
+    sender.nonce = accInfo.nonce
 
     const subs: SubmittableExtrinsic[] = [];
 

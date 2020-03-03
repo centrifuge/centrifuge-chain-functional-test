@@ -4,7 +4,6 @@ import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import { bnToHex, hexToU8a } from "@polkadot/util";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import { Connection } from "./connect";
-import { PreCommitData as PreCommitDataType } from './interfaces';
 
 export class PreCommitParam {
     public anchorId: string;
@@ -94,7 +93,7 @@ export class Anchoring {
     }
 
     public async findPreCommit(anchorId: string): Promise<PreCommitData> {
-        const preCommit: PreCommitDataType = await this.connection.api.query.anchor.preCommits(anchorId);
+        const preCommit = await this.connection.api.query.anchor.preCommits(anchorId);
         return new PreCommitData(
             preCommit.signingRoot.toString(),
             preCommit.identity.toString(),

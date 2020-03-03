@@ -2,6 +2,7 @@ import { ApiPromise } from "@polkadot/api";
 import { Keyring } from "@polkadot/keyring";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { IKeyringPair } from "@polkadot/types/types";
+import { Index } from "@polkadot/types/interfaces";
 import BN from "bn.js";
 import { Config } from "./config";
 
@@ -49,7 +50,7 @@ export class AccountManager {
         }
 
         // execute transfers sequencially so that nonce can be properly updated for funder
-        const [funderNonce, _] = await api.query.system.account(funder.address);
+        const { nonce: funderNonce } = await api.query.system.account(funder.address);
 
         // generate the prefixes for additional test accounts
         const additionalAccMnemonics: string[] = [];
@@ -95,7 +96,7 @@ export class AccountManager {
         return this.keyring.getPair(pair.address);
     }
 
-    public senderFunction(api: ApiPromise, receiver: string, sender: IKeyringPair, value: BN|number, nonce: BN|number):
+    public senderFunction(api: ApiPromise, receiver: string, sender: IKeyringPair, value: BN|number, nonce: Index|BN|number):
         Promise<any> {
         return new Promise<any>((resolve, reject) => {
           api.tx.balances.transfer(receiver, value).sign(sender, { nonce })

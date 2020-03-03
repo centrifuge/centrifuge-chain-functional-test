@@ -9,7 +9,7 @@
   "main": "echo \"Error: no main specified\" && exit 1",
   "scripts": {
     "start": "echo \"Error: no start specified\" && exit 1",
-    "test": "TS_NODE_PROJECT=./tsconfig.json mocha --timeout 200000 -r ts-node/register src/root_test.ts src/**/*.spec.ts",
+    "test": "mocha --timeout 200000 -r ts-node/register -r tsconfig-paths/register src/root_test.ts src/**/*.spec.ts",
     "build": "npm run generate:defs && npm run generate:meta",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package centrifuge-chain/types/interfaces --input ./src/interfaces",
     "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package centrifuge-chain/types/interfaces --endpoint ./metadata.json --output ./src/interfaces",
@@ -24,6 +24,7 @@
     "chai": "^4.2.0",
     "mocha": "^7.1.0",
     "ts-node": "^8.6.2",
+    "tsconfig-paths": "^3.9.0",
     "tslint": "^6.0.0",
     "typescript": "^3.8.3"
   },
