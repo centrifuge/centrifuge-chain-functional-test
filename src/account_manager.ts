@@ -41,15 +41,15 @@ export class AccountManager {
 
         // Add funding account to our keyring
         const funder = this.keyring.addFromUri(this.config.getFundingAccountSURI());
-        const fundersBalance = await api.query.balances.freeBalance(funder.address);
+        const fundersBalance = await api.query.balances.account(funder.address);
 
         // funders balance must be higher than the maximum required balance to be transfered to other accounts
-        if (fundersBalance.lt(minBalance.muln(this.config.getPermanantAccountSURIs().length + nAdditionalAccounts))) {
+        if (fundersBalance.free.lt(minBalance.muln(this.config.getPermanantAccountSURIs().length + nAdditionalAccounts))) {
             throw new Error("Funder is too poor to pay for the test accounts");
         }
 
         // execute transfers sequencially so that nonce can be properly updated for funder
-        const funderNonce = await api.query.system.accountNonce(funder.address);
+        const [funderNonce, _] = await api.query.system.account(funder.address);
 
         // generate the prefixes for additional test accounts
         const additionalAccMnemonics: string[] = [];
@@ -67,12 +67,12 @@ export class AccountManager {
             // TODO test this when we upgrade substrate for the chain next time. For now it always
             // transfers the min balance to the accounts. Since otherwise it causes an error where `Transaction status:
             // Future`.
-            const accBalance = await api.query.balances.freeBalance(acc.address);
+            const accData = await api.query.balances.account(acc.publicKey);
             console.log(acc.address);
 
-            if (accBalance.lt(minBalance)) {
+            if (accData.free.lt(minBalance)) {
                 try {
-                    const res = await this.senderFunction(api, acc.address, funder, minBalance.sub(accBalance),
+                    const res = await this.senderFunction(api, acc.address, funder, minBalance.sub(accData.free),
                     funderNonce);
                     // console.log(res);
                 } catch (e) {

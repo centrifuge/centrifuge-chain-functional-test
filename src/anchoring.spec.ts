@@ -17,7 +17,7 @@ describe("Anchoring", () => {
     const ancParam = newRandomCommitParam();
 
     // const a = TestGlobals.accMan.getAccountByIndex(0);
-    // const balance = await TestGlobals.connection.api.query.balances.freeBalance(a.address);
+    // const balance = await TestGlobals.connection.api.query.balances.account(a.address);
     // console.log("Got balance for account", a.address, balance.toString());
 
     anchorer.commit(ancParam)
@@ -123,14 +123,14 @@ describe("Anchoring", () => {
     const charlie = TestGlobals.accMan.getAccountByIndex(1);
     const testAcc = TestGlobals.accMan.getAccountByIndex(2);
 
-    const funderNonce = await TestGlobals.connection.api.query.system.accountNonce(alice.address);
+    const [funderNonce] = await TestGlobals.connection.api.query.system.account(alice.address);
     let funderNonceRaw = +funderNonce.toString();
 
     try {
-      await TestGlobals.connection.api.query.balances.freeBalance(charlie.address);
+      await TestGlobals.connection.api.query.balances.account(charlie.address);
       for (let i = 0; i < 5; i++) {
-        const accBalance = await TestGlobals.connection.api.query.balances.freeBalance(testAcc.address);
-        console.log("Balance for account " + testAcc.address + ": " + accBalance);
+        const accData = await TestGlobals.connection.api.query.balances.account(testAcc.address);
+        console.log("Balance for account " + testAcc.address + ": " + accData.free);
         const start = new Date();
         const res = await senderFunction(TestGlobals.connection.api, testAcc.address, alice, 100000, funderNonceRaw);
         funderNonceRaw++;

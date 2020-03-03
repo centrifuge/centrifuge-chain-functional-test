@@ -13,7 +13,7 @@ interface ISender {
 describe("Load tests", () => {
   it("should send many txs in parallel and print aggregated statistics", async () => {
     const sender: ISender = { keypair: TestGlobals.accMan.getAccountByIndex(0), nonce: new BN(0) };
-    sender.nonce = await TestGlobals.connection.api.query.system.accountNonce(sender.keypair.address) as any;
+    [sender.nonce] = await TestGlobals.connection.api.query.system.account(sender.keypair.address);
 
     const subs: SubmittableExtrinsic[] = [];
 
@@ -86,7 +86,7 @@ function addAchorComms(subs: SubmittableExtrinsic[], n: number) {
 
 async function signAndSend(sender: ISender, subs: SubmittableExtrinsic[]) {
   const exts: IExt[] = [];
-  // const senderBalance = await TestGlobals.connection.api.query.balances.freeBalance(sender.keypair.address);
+  // const senderBalance = await TestGlobals.connection.api.query.balances.account(sender.keypair.address);
   // console.log("Balance for account " + sender.keypair.address + ": " + senderBalance);
 
   for (const sub of subs) {

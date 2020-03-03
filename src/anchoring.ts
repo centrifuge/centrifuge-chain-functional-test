@@ -4,6 +4,7 @@ import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import { bnToHex, hexToU8a } from "@polkadot/util";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import { Connection } from "./connect";
+import { PreCommitData as PreCommitDataType } from './interfaces';
 
 export class PreCommitParam {
     public anchorId: string;
@@ -45,9 +46,9 @@ export class PreCommitData {
         signingRoot: string,
         identity: string,
         expirationBlock: string) {
-            this.signingRoot = signingRoot;
-            this.identity = identity;
-            this.expirationBlock = expirationBlock;
+        this.signingRoot = signingRoot;
+        this.identity = identity;
+        this.expirationBlock = expirationBlock;
     }
 }
 
@@ -57,11 +58,11 @@ export class AnchorData {
     public anchoredBlock: string;
 
     constructor(id: string,
-                docRoot: string,
-                anchoredBlock: string) {
-            this.id = id;
-            this.docRoot = docRoot;
-            this.anchoredBlock = anchoredBlock;
+        docRoot: string,
+        anchoredBlock: string) {
+        this.id = id;
+        this.docRoot = docRoot;
+        this.anchoredBlock = anchoredBlock;
     }
 }
 
@@ -93,10 +94,10 @@ export class Anchoring {
     }
 
     public async findPreCommit(anchorId: string): Promise<PreCommitData> {
-        const preCommit = await this.connection.api.query.anchor.preCommits(anchorId);
+        const preCommit: PreCommitDataType = await this.connection.api.query.anchor.preCommits(anchorId);
         return new PreCommitData(
-                bnToHex((preCommit as any).signing_root),
-                bnToHex((preCommit as any).identity),
-                bnToHex((preCommit as any).expiration_block));
+            preCommit.signingRoot.toString(),
+            preCommit.identity.toString(),
+            preCommit.expirationBlock.toString());
     }
 }

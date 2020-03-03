@@ -9,23 +9,28 @@
   "main": "echo \"Error: no main specified\" && exit 1",
   "scripts": {
     "start": "echo \"Error: no start specified\" && exit 1",
-    "test": "mocha --timeout 200000 -r ts-node/register src/root_test.ts src/**/*.spec.ts"
+    "test": "TS_NODE_PROJECT=./tsconfig.json mocha --timeout 200000 -r ts-node/register src/root_test.ts src/**/*.spec.ts",
+    "build": "npm run generate:defs && npm run generate:meta",
+    "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package centrifuge-chain/types/interfaces --input ./src/interfaces",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package centrifuge-chain/types/interfaces --endpoint ./metadata.json --output ./src/interfaces",
+    "lint": "tsc --noEmit --pretty"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/chai": "^4.2.7",
-    "@types/mocha": "^5.2.7",
+    "@polkadot/typegen": "^1.4.2",
+    "@types/chai": "^4.2.10",
+    "@types/mocha": "^7.0.1",
     "chai": "^4.2.0",
-    "mocha": "^6.2.2",
+    "mocha": "^7.1.0",
     "ts-node": "^8.6.2",
-    "tslint": "^5.20.1",
-    "typescript": "^3.7.5"
+    "tslint": "^6.0.0",
+    "typescript": "^3.8.3"
   },
   "dependencies": {
-    "@polkadot/api": "^0.100.1",
-    "@polkadot/keyring": "^1.8.1",
+    "@polkadot/api": "^1.4.2",
+    "@polkadot/keyring": "^2.6.1",
     "bn.js": "^5.1.1",
-    "web3-utils": "^1.2.4"
+    "web3-utils": "^1.2.6"
   }
 }
