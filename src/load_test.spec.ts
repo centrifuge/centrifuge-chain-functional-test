@@ -90,8 +90,8 @@ function addAchorComms(subs: SubmittableExtrinsic[], n: number) {
 
 async function signAndSend(sender: ISender, subs: SubmittableExtrinsic[]) {
   const exts: IExt[] = [];
-  // const senderBalance = await TestGlobals.connection.api.query.balances.account(sender.keypair.address);
-  // console.log("Balance for account " + sender.keypair.address + ": " + senderBalance);
+  // const senderInfo = await TestGlobals.connection.api.query.system.account(sender.keypair.address);
+  // console.log("Balance for account " + sender.keypair.address + ": " + senderInfo.data.free);
 
   for (const sub of subs) {
 

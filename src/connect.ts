@@ -24,15 +24,15 @@ export async function connect(wsURL: string): Promise<Connection> {
   // extract all types from definitions - fast and dirty approach, flatted on 'types'
   const types = Object.values(definitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
 
-    // Initialise the provider to connect to the local node
-    const provider = new WsProvider(wsURL);
-    // initialise via static create
-    // tslint:disable:object-literal-sort-keys
-    const api = await ApiPromise.create({
-      ...types,
-      provider,
-    });
-    // tslint:enable:object-literal-sort-keys
+  // Initialise the provider to connect to the local node
+  const provider = new WsProvider(wsURL);
+  // initialise via static create
+  // tslint:disable:object-literal-sort-keys
+  const api = await ApiPromise.create({
+    types,
+    provider,
+  });
+  // tslint:enable:object-literal-sort-keys
 
-    return new Connection(provider, api);
+  return new Connection(provider, api);
 }
