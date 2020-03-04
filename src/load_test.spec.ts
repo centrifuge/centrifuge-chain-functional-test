@@ -10,7 +10,10 @@ interface ISender {
   nonce: BN;
 }
 
-describe("Load tests", () => {
+// Skipped for now – there is a bug in @polkadot/api that leads to subscription events being received before the
+// subscription event is known, which means that events are dropped and the counts will not match in this test.
+// TODO uncomment as soon as the bug is fixed. See https://riot.im/app/#/room/!ODncPkrefHpjjaUfVc:matrix.parity.io
+describe.skip("Load tests", () => {
   it("should send many txs in parallel and print aggregated statistics", async () => {
     const sender: ISender = {
       keypair: TestGlobals.accMan.getAccountByIndex(0),
