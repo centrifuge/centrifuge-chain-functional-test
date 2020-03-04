@@ -36,3 +36,11 @@ export function newRandomAnchorParams(): RandomAnchor {
     anchorParam.proof = u8aToHex(proof);
     return new RandomAnchor(new AnchorPreCommitParam(anchorId, u8aToHex(signingRoot)), anchorParam);
 }
+
+export function callIfThrows(expectFunc: () => Chai.Assertion, done: Mocha.Done) {
+    try {
+        expectFunc()
+    } catch (e) {
+        done(e)
+    }
+}

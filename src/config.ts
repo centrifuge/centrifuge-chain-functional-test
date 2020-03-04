@@ -6,7 +6,7 @@ export class Config {
     }
 
     public get(key: string): any {
-        return process.env[key.toUpperCase()] || (this.configJson as any)[key];
+        return process.env[key.toUpperCase()] || this.configJson[key];
     }
 
     public getFundingAccountSURI(): string {

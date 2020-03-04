@@ -12,8 +12,12 @@ interface ISender {
 
 describe("Load tests", () => {
   it("should send many txs in parallel and print aggregated statistics", async () => {
-    const sender: ISender = { keypair: TestGlobals.accMan.getAccountByIndex(0), nonce: new BN(0) };
-    sender.nonce = await TestGlobals.connection.api.query.system.accountNonce(sender.keypair.address) as any;
+    const sender: ISender = {
+      keypair: TestGlobals.accMan.getAccountByIndex(0),
+      nonce: new BN(0)
+    };
+    const accInfo = await TestGlobals.connection.api.query.system.account(sender.keypair.address);
+    sender.nonce = accInfo.nonce
 
     const subs: SubmittableExtrinsic[] = [];
 
@@ -34,11 +38,10 @@ describe("Load tests", () => {
         `pending: ${exts.filter((t) => t.status === "pending").length} | ` +
         `future: ${exts.filter((t) => t.status === "future").length} | ` +
         `ready: ${exts.filter((t) => t.status === "ready").length} | ` +
-        `finalized: ${finalized.length} | ` +
-        `usurped: ${exts.filter((t) => t.status === "usurped").length} | ` +
         `broadcast: ${exts.filter((t) => t.status === "broadcast").length} | ` +
-        `dropped: ${exts.filter((t) => t.status === "dropped").length} | ` +
-        `invalid: ${exts.filter((t) => t.status === "invalid").length} || ` +
+        `inBlock: ${exts.filter((t) => t.status === "inBlock").length} | ` +
+        `finalized: ${finalized.length} | ` +
+        `failed: ${exts.filter((t) => t.status === "failed").length} || ` +
         `avgMs: ${stopped.length && stopped.reduce((sum, t) => sum + t.stopAt! - t.startAt, 0) / stopped.length}`);
 
       if (finalized.length === exts.length) {
@@ -55,7 +58,7 @@ describe("Load tests", () => {
 interface IExt {
   startAt: number;
   stopAt: number | null;
-  status: "pending" | "future" | "ready" | "finalized" | "usurped" | "broadcast" | "dropped" | "invalid";
+  status: "pending" | "future" | "broadcast" | "ready" | "inBlock" | "finalized" | "failed";
 }
 
 function addBalanceTransfs(subs: SubmittableExtrinsic[], n: number) {
@@ -86,8 +89,8 @@ function addAchorComms(subs: SubmittableExtrinsic[], n: number) {
 
 async function signAndSend(sender: ISender, subs: SubmittableExtrinsic[]) {
   const exts: IExt[] = [];
-  // const senderBalance = await TestGlobals.connection.api.query.balances.freeBalance(sender.keypair.address);
-  // console.log("Balance for account " + sender.keypair.address + ": " + senderBalance);
+  // const senderInfo = await TestGlobals.connection.api.query.system.account(sender.keypair.address);
+  // console.log("Balance for account " + sender.keypair.address + ": " + senderInfo.data.free);
 
   for (const sub of subs) {
 
@@ -105,6 +108,10 @@ async function signAndSend(sender: ISender, subs: SubmittableExtrinsic[]) {
           ext.status = "future";
         } else if (status.isReady) {
           ext.status = "ready";
+        } else if (status.isBroadcast) {
+          ext.status = "broadcast";
+        } else if (status.isInBlock) {
+          ext.status = "inBlock"
         } else if (status.isFinalized) {
           ext.status = "finalized";
 
@@ -114,15 +121,9 @@ async function signAndSend(sender: ISender, subs: SubmittableExtrinsic[]) {
           // events.forEach(({ phase, event: { data, method, section } }) => {
           //   console.log("\t", phase.toString(), `: ${section}.${method}`, data.toString());
           // });
-        } else if (status.isUsurped) {
-          ext.status = "usurped";
-        } else if (status.isBroadcast) {
-          ext.status = "broadcast";
-        } else if (status.isDropped) {
-          ext.status = "dropped";
-          ext.stopAt = Date.now();
-        } else if (status.isInvalid) {
-          ext.status = "invalid";
+        } else if (status.isRetracted || status.isFinalityTimeout || status.isUsurped || status.isDropped
+          || status.isInvalid) {
+          ext.status = "failed";
           ext.stopAt = Date.now();
         } else {
           throw new Error(`unexpected status ${status}`);

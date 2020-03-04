@@ -4,6 +4,7 @@ import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import { bnToHex, hexToU8a } from "@polkadot/util";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import { Connection } from "./connect";
+import { AnchorData, PreCommitData } from "./interfaces/types";
 
 export class PreCommitParam {
     public anchorId: string;
@@ -36,35 +37,6 @@ export class AnchorParam {
     }
 }
 
-export class PreCommitData {
-    public signingRoot: string;
-    public identity: string;
-    public expirationBlock: string;
-
-    constructor(
-        signingRoot: string,
-        identity: string,
-        expirationBlock: string) {
-            this.signingRoot = signingRoot;
-            this.identity = identity;
-            this.expirationBlock = expirationBlock;
-    }
-}
-
-export class AnchorData {
-    public id: string;
-    public docRoot: string;
-    public anchoredBlock: string;
-
-    constructor(id: string,
-                docRoot: string,
-                anchoredBlock: string) {
-            this.id = id;
-            this.docRoot = docRoot;
-            this.anchoredBlock = anchoredBlock;
-    }
-}
-
 export class Anchoring {
 
     private connection: Connection;
@@ -84,7 +56,8 @@ export class Anchoring {
 
     public async findAnchor(anchorId: string): Promise<AnchorData> {
         const anchor = await this.connection.provider.send("anchor_getAnchorById", [anchorId]);
-        return new AnchorData(anchor.id, anchor.doc_root, anchor.anchored_block);
+        return this.connection.api.createType('AnchorData', [anchor.id, anchor.doc_root, anchor.anchored_block])
+        // return new AnchorData(anchor.id, anchor.doc_root, anchor.anchored_block);
     }
 
     public async findAnchorEvictionDate(anchorId: string): Promise<Date> {
@@ -93,10 +66,6 @@ export class Anchoring {
     }
 
     public async findPreCommit(anchorId: string): Promise<PreCommitData> {
-        const preCommit = await this.connection.api.query.anchor.preCommits(anchorId);
-        return new PreCommitData(
-                bnToHex((preCommit as any).signing_root),
-                bnToHex((preCommit as any).identity),
-                bnToHex((preCommit as any).expiration_block));
+        return await this.connection.api.query.anchor.preCommits(anchorId);
     }
 }
