@@ -11,6 +11,7 @@ before(async () => {
 
     // api obj
     TestGlobals.connection = await connect(TestGlobals.testConfig.getCentChainEndpoint());
+
     const [chain, nodeName, nodeVersion] = await Promise.all([
         TestGlobals.connection.api.rpc.system.chain(),
         TestGlobals.connection.api.rpc.system.name(),

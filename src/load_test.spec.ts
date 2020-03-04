@@ -38,11 +38,10 @@ describe("Load tests", () => {
         `pending: ${exts.filter((t) => t.status === "pending").length} | ` +
         `future: ${exts.filter((t) => t.status === "future").length} | ` +
         `ready: ${exts.filter((t) => t.status === "ready").length} | ` +
-        `finalized: ${finalized.length} | ` +
-        `usurped: ${exts.filter((t) => t.status === "usurped").length} | ` +
         `broadcast: ${exts.filter((t) => t.status === "broadcast").length} | ` +
-        `dropped: ${exts.filter((t) => t.status === "dropped").length} | ` +
-        `invalid: ${exts.filter((t) => t.status === "invalid").length} || ` +
+        `inBlock: ${exts.filter((t) => t.status === "inBlock").length} | ` +
+        `finalized: ${finalized.length} | ` +
+        `failed: ${exts.filter((t) => t.status === "failed").length} || ` +
         `avgMs: ${stopped.length && stopped.reduce((sum, t) => sum + t.stopAt! - t.startAt, 0) / stopped.length}`);
 
       if (finalized.length === exts.length) {
@@ -59,7 +58,7 @@ describe("Load tests", () => {
 interface IExt {
   startAt: number;
   stopAt: number | null;
-  status: "pending" | "future" | "ready" | "finalized" | "usurped" | "broadcast" | "dropped" | "invalid";
+  status: "pending" | "future" | "broadcast" | "ready" | "inBlock" | "finalized" | "failed";
 }
 
 function addBalanceTransfs(subs: SubmittableExtrinsic[], n: number) {
@@ -109,6 +108,10 @@ async function signAndSend(sender: ISender, subs: SubmittableExtrinsic[]) {
           ext.status = "future";
         } else if (status.isReady) {
           ext.status = "ready";
+        } else if (status.isBroadcast) {
+          ext.status = "broadcast";
+        } else if (status.isInBlock) {
+          ext.status = "inBlock"
         } else if (status.isFinalized) {
           ext.status = "finalized";
 
@@ -118,15 +121,9 @@ async function signAndSend(sender: ISender, subs: SubmittableExtrinsic[]) {
           // events.forEach(({ phase, event: { data, method, section } }) => {
           //   console.log("\t", phase.toString(), `: ${section}.${method}`, data.toString());
           // });
-        } else if (status.isUsurped) {
-          ext.status = "usurped";
-        } else if (status.isBroadcast) {
-          ext.status = "broadcast";
-        } else if (status.isDropped) {
-          ext.status = "dropped";
-          ext.stopAt = Date.now();
-        } else if (status.isInvalid) {
-          ext.status = "invalid";
+        } else if (status.isRetracted || status.isFinalityTimeout || status.isUsurped || status.isDropped
+          || status.isInvalid) {
+          ext.status = "failed";
           ext.stopAt = Date.now();
         } else {
           throw new Error(`unexpected status ${status}`);
