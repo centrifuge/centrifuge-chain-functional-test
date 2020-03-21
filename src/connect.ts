@@ -29,7 +29,11 @@ export async function connect(wsURL: string): Promise<Connection> {
   // initialise via static create
   // tslint:disable:object-literal-sort-keys
   const api = await ApiPromise.create({
-    types,
+    types: {
+      ...types,
+      Address: "AccountId",
+      LookupSource: "AccountId",
+    },
     provider,
   });
   // tslint:enable:object-literal-sort-keys
