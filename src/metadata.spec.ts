@@ -15,7 +15,7 @@ describe("Metadata", () => {
             count++;
         });
       });
-      expect(count).to.equal(95);
+      expect(count).to.equal(89);
       // dummy check
       expect(extrinsics.length).to.equal(count);
   });
